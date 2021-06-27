@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/test")
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "Authorization")
+@CrossOrigin(origins = "*")
 public class TestController {
 
     @RequestMapping(value = "/anonymous", method = RequestMethod.GET)
@@ -38,7 +38,7 @@ public class TestController {
         return ResponseEntity.ok(result);
     }
 
-//    @RolesAllowed({"admin","user"})
+    @RolesAllowed({"admin","user"})
     @RequestMapping(value = "/all-user", method = RequestMethod.GET)
     public ResponseEntity<Map<String, String>> getAllUser() {
         Map<String, String> result = new HashMap<>();
