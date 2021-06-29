@@ -1,7 +1,9 @@
 on:
+  push:
+    branches: [ production, uat ]
   pull_request:
-    branches: [ main ]
-
+    branches: [ production ]
+  workflow_dispatch:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
