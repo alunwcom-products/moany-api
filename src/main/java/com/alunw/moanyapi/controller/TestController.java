@@ -26,12 +26,13 @@ import java.util.Set;
 public class TestController {
 
     private static final Logger logger = LoggerFactory.getLogger(TestController.class);
+    private static final String MESSAGE_KEY = "message";
 
     @RequestMapping(value = "/anonymous", method = RequestMethod.GET)
     public ResponseEntity<Map<String, String>> getAnonymous(HttpServletRequest request) {
         getUserInfo(request);
         Map<String, String> result = new HashMap<>();
-        result.put("message", "Hello Anonymous");
+        result.put(MESSAGE_KEY, "Hello Anonymous");
         return ResponseEntity.ok(result);
     }
 
@@ -40,7 +41,7 @@ public class TestController {
     public ResponseEntity<Map<String, String>> getUser(HttpServletRequest request) {
         getUserInfo(request);
         Map<String, String> result = new HashMap<>();
-        result.put("message", "Hello User");
+        result.put(MESSAGE_KEY, "Hello User");
         return ResponseEntity.ok(result);
     }
 
@@ -49,7 +50,7 @@ public class TestController {
     public ResponseEntity<Map<String, String>> getAdmin(HttpServletRequest request) {
         Map<String, Object> userInfo = getUserInfo(request);
         Map<String, String> result = new HashMap<>();
-        result.put("message", "Hello " + userInfo.get("firstName") + " " + userInfo.get("lastName") +  " [admin]");
+        result.put(MESSAGE_KEY, "Hello " + userInfo.get("firstName") + " " + userInfo.get("lastName") +  " [admin]");
         return ResponseEntity.ok(result);
     }
 
@@ -58,14 +59,14 @@ public class TestController {
     public ResponseEntity<Map<String, String>> getAllUser(HttpServletRequest request) {
         getUserInfo(request);
         Map<String, String> result = new HashMap<>();
-        result.put("message", "Hello All Users");
+        result.put(MESSAGE_KEY, "Hello All Users");
         return ResponseEntity.ok(result);
     }
 
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
         Map<String, Object> results = new HashMap<>();
         KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
-        KeycloakPrincipal principal=(KeycloakPrincipal)token.getPrincipal();
+        KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
         KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
         AccessToken accessToken = session.getToken();
         results.put("username", accessToken.getPreferredUsername());
