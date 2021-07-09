@@ -6,7 +6,5 @@ keycloak:
   auth-server-url: https://auth.alunw.com/auth/
   ssl-required: external
   resource: moany-api
-  credentials:
-    secret: ${KEYCLOAK_CLIENT_SECRET}
   use-resource-role-mappings: true
   bearer-only: true
