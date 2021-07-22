@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,7 +21,7 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/test")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000/")
 public class TestController {
 
     private static final Logger logger = LoggerFactory.getLogger(TestController.class);
@@ -53,7 +56,7 @@ public class TestController {
 
 //    @RolesAllowed({"admin","user"})
     @RequestMapping(value = "/all-user", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, String>> getAllUser(HttpServletRequest request) {
+    public ResponseEntity<Map<String, String>> getAllUser(HttpServletRequest request, @AuthenticationPrincipal Jwt jwt) {
         getUserInfo(request);
         Map<String, String> result = new HashMap<>();
         result.put(MESSAGE_KEY, "Hello All Users");
@@ -62,14 +65,19 @@ public class TestController {
 
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
         Map<String, Object> results = new HashMap<>();
+        logger.info("Principal: " + request.getUserPrincipal());
+        JwtAuthenticationToken jwt2 = (JwtAuthenticationToken) request.getUserPrincipal();
+        Jwt jwt = jwt2.getToken();
+        logger.info("token: " + jwt.getClaims());
+
 //        KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
 //        KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
 //        KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
 //        AccessToken accessToken = session.getToken();
 //        results.put("username", accessToken.getPreferredUsername());
 //        results.put("email", accessToken.getEmail());
-//        results.put("lastName", accessToken.getFamilyName());
-//        results.put("firstName", accessToken.getGivenName());
+        results.put("lastName", jwt.getClaimAsString("family_name"));
+        results.put("firstName", jwt.getClaimAsString("given_name"));
 //        results.put("realmName", accessToken.getIssuer());
 //        AccessToken.Access realmAccess = accessToken.getRealmAccess();
 //        results.put("roles", realmAccess.getRoles());
