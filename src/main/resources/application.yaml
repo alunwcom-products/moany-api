@@ -1,10 +1,11 @@
 ---
 server:
   port: 9001
-keycloak:
-  realm: alunwcom
-  auth-server-url: https://auth.alunw.com/auth/
-  ssl-required: external
-  resource: moany-api
-  use-resource-role-mappings: true
-  bearer-only: true
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.alunw.com/auth/realms/alunwcom
+          jwk-set-uri: https://auth.alunw.com/auth/realms/alunwcom/protocol/openid-connect/certs
+

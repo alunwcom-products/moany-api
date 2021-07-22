@@ -16,8 +16,10 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.keycloak:keycloak-spring-boot-starter:14.0.0'
-	implementation 'org.keycloak.bom:keycloak-adapter-bom:14.0.0'
+//	implementation 'org.keycloak:keycloak-spring-boot-starter:14.0.0'
+//	implementation 'org.keycloak.bom:keycloak-adapter-bom:14.0.0'
+	implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
