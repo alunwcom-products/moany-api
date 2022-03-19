@@ -66,21 +66,18 @@ public class TestController {
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
         Map<String, Object> results = new HashMap<>();
         KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
-        // TODO better catching of error conditions
-        if (token == null) {
-            logger.warn("No authentication token found: " + request.getRemoteAddr());
-            return Collections.emptyMap();
+        if (token != null) {
+            KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
+            KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
+            AccessToken accessToken = session.getToken();
+            results.put("username", accessToken.getPreferredUsername());
+            results.put("email", accessToken.getEmail());
+            results.put("lastName", accessToken.getFamilyName());
+            results.put("firstName", accessToken.getGivenName());
+            results.put("realmName", accessToken.getIssuer());
+            AccessToken.Access realmAccess = accessToken.getRealmAccess();
+            results.put("roles", realmAccess.getRoles());
         }
-        KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
-        KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
-        AccessToken accessToken = session.getToken();
-        results.put("username", accessToken.getPreferredUsername());
-        results.put("email", accessToken.getEmail());
-        results.put("lastName", accessToken.getFamilyName());
-        results.put("firstName", accessToken.getGivenName());
-        results.put("realmName", accessToken.getIssuer());
-        AccessToken.Access realmAccess = accessToken.getRealmAccess();
-        results.put("roles", realmAccess.getRoles());
         logger.info("User info = {}", results);
         return results;
     }
