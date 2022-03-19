@@ -66,6 +66,11 @@ public class TestController {
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
         Map<String, Object> results = new HashMap<>();
         KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
+        // TODO better catching of error conditions
+        if (token == null) {
+            logger.warn("No authentication token found: " + request.getRemoteAddr());
+            return Collections.emptyMap();
+        }
         KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
         KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
         AccessToken accessToken = session.getToken();
