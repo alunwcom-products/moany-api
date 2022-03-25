@@ -18,3 +18,9 @@ Using https://auth.alunw.com/auth as Keycloak server
 
 - For moany-api: client_id = moany-api
 - For front-end: client_id = moany-fe
+
+### Dependency updates
+
+> .\gradlew.bat dependencyUpdates -Drevision=release
+
+> .\gradlew.bat wrapper --gradle-version 7.4.1
