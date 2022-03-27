@@ -19,8 +19,16 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     private PasswordUtils utils;
 
     @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.jdbcAuthentication().dataSource(dataSource);
+    public void configureGlobal(AuthenticationManagerBuilder auth)
+            throws Exception {
+        auth.jdbcAuthentication()
+                .dataSource(dataSource)
+                .usersByUsernameQuery("select email,password,enabled "
+                        + "from bael_users "
+                        + "where email = ?")
+                .authoritiesByUsernameQuery("select email,authority "
+                        + "from authorities "
+                        + "where email = ?");
     }
 
     @Override
