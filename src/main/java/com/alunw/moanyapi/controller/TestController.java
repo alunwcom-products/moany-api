@@ -4,12 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +56,11 @@ public class TestController {
         Map<String, String> result = new HashMap<>();
         result.put(MESSAGE_KEY, "Hello All Users");
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/auth")
+    public Principal retrievePrincipal(Principal principal) {
+        return principal;
     }
 
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
