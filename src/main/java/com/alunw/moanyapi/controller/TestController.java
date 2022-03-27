@@ -1,12 +1,7 @@
 package com.alunw.moanyapi.controller;
 
-import org.keycloak.KeycloakPrincipal;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
-import org.keycloak.representations.AccessToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,10 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/test")
@@ -65,19 +58,19 @@ public class TestController {
 
     private Map<String, Object> getUserInfo(HttpServletRequest request) {
         Map<String, Object> results = new HashMap<>();
-        KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
-        if (token != null) {
-            KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
-            KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
-            AccessToken accessToken = session.getToken();
-            results.put("username", accessToken.getPreferredUsername());
-            results.put("email", accessToken.getEmail());
-            results.put("lastName", accessToken.getFamilyName());
-            results.put("firstName", accessToken.getGivenName());
-            results.put("realmName", accessToken.getIssuer());
-            AccessToken.Access realmAccess = accessToken.getRealmAccess();
-            results.put("roles", realmAccess.getRoles());
-        }
+//        KeycloakAuthenticationToken token = (KeycloakAuthenticationToken) request.getUserPrincipal();
+//        if (token != null) {
+//            KeycloakPrincipal<?> principal = (KeycloakPrincipal<?>) token.getPrincipal();
+//            KeycloakSecurityContext session = principal.getKeycloakSecurityContext();
+//            AccessToken accessToken = session.getToken();
+//            results.put("username", accessToken.getPreferredUsername());
+//            results.put("email", accessToken.getEmail());
+//            results.put("lastName", accessToken.getFamilyName());
+//            results.put("firstName", accessToken.getGivenName());
+//            results.put("realmName", accessToken.getIssuer());
+//            AccessToken.Access realmAccess = accessToken.getRealmAccess();
+//            results.put("roles", realmAccess.getRoles());
+//        }
         logger.info("User info = {}", results);
         return results;
     }
