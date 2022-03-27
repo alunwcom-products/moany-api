@@ -19,14 +19,8 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
     private PasswordUtils utils;
 
     @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth)
-            throws Exception {
-        auth.jdbcAuthentication()
-                .dataSource(dataSource)
-                .withDefaultSchema()
-                .withUser(User.withUsername("user")
-                        .password(utils.passwordEncoder().encode("pass"))
-                        .roles("USER"));
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication().dataSource(dataSource);
     }
 
     @Override
