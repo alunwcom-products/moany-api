@@ -48,4 +48,20 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
                 .frameOptions()
                 .sameOrigin();
     }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public PasswordUtils getUtils() {
+        return utils;
+    }
+
+    public void setUtils(PasswordUtils utils) {
+        this.utils = utils;
+    }
 }
