@@ -3,6 +3,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -13,6 +14,12 @@ const USER = {
     username: 'user',
     password: 'password', // Note: In a real app, passwords should be hashed!
 };
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+
+// Set the views directory
+app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -59,21 +66,13 @@ function isAuthenticated(req, res, next) {
 
 // Routes
 app.get('/', isAuthenticated, (req, res) => {
-    res.send('<h1>Protected Page</h1><p>Welcome to the protected page!</p><a href="/logout">Logout</a>');
+    res.render('protected', { username: req.user.username });
 });
 
 app.get('/login', (req, res) => {
     const errorMessage = req.session.errorMessage;
     req.session.errorMessage = null; // Clear the message after displaying
-    res.send(`
-        <h1>Login</h1>
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        ${errorMessage ? `<p style="color:red;">${errorMessage}</p>` : ''}
-    `);
+    res.render('login', { errorMessage });
 });
 
 app.post('/login', (req, res, next) => {
@@ -94,15 +93,11 @@ app.post('/login', (req, res, next) => {
 app.get('/logout', (req, res) => {
     req.logout((err) => {
         if (err) {
-            // Handle any error that occurred during logout
             console.error('Logout error:', err);
             return res.redirect('/'); // Redirect to home or an error page
         }
-        // Optionally, you can add any custom logic here
         console.log('User logged out successfully');
-
-        // Redirect to login page after successful logout
-        res.redirect('/login');
+        res.redirect('/login'); // Redirect to login page after successful logout
     });
 });
 
