@@ -3,10 +3,26 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const winston = require('winston');
 const path = require('path');
 
+require('dotenv').config();
+
 const app = express();
-const PORT = 3000;
+
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) => {
+            return `${timestamp} [${level}]: ${message}`;
+        })
+    ),
+    transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: 'app.log' })
+    ]
+});
 
 // Dummy user for authentication (in a real app, this should be from a database)
 const USER = {
@@ -102,6 +118,6 @@ app.get('/logout', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
+app.listen(process.env.EXPRESS_PORT, () => {
+    logger.info(`Server started on port ${process.env.EXPRESS_PORT}`);
 });
