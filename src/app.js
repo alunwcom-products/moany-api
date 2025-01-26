@@ -1,12 +1,13 @@
-const express = require('express');
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const winston = require('winston');
-const path = require('path');
+import express from 'express';
+import session from 'express-session';
+import bodyParser from 'body-parser';
+import passport from 'passport';
+import { Strategy } from 'passport-local';
+import winston from 'winston';
+import path from 'path';
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 
@@ -35,7 +36,7 @@ const USER = {
 app.set('view engine', 'ejs');
 
 // Set the views directory
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(import.meta.dirname, 'views'));
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -50,7 +51,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Configure Passport Local Strategy
-passport.use(new LocalStrategy((username, password, done) => {
+passport.use(new Strategy((username, password, done) => {
     if (username === USER.username && password === USER.password) {
         return done(null, USER);
     } else {

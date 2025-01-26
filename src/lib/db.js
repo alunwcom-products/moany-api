@@ -1,7 +1,7 @@
-const mysql = require('mysql2');
-const fs = require('fs');
-// const csv = require('csv-parser');
-require('dotenv').config();
+import mysql from 'mysql2';
+// import fs from 'fs';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // MySQL connection configuration using environment variables
 const connection = mysql.createConnection({
