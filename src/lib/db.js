@@ -20,7 +20,7 @@ connection.connect((err) => {
     console.log('Connected to MySQL');
 });
 
-module.exports = connection;
+export { connection }
 
 // Function to insert transaction records into the database
 // function insertTransactionsFromCSV(csvFilePath) {
