@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+app.use(bodyParser.json())
 
 const logger = winston.createLogger({
     level: 'info',
@@ -32,91 +33,103 @@ const USER = {
     password: 'password', // Note: In a real app, passwords should be hashed!
 };
 
-// Set EJS as the templating engine
-app.set('view engine', 'ejs');
+// // Set EJS as the templating engine
+// app.set('view engine', 'ejs');
 
-// Set the views directory
-app.set('views', path.join(import.meta.dirname, 'views'));
+// // Set the views directory
+// app.set('views', path.join(import.meta.dirname, 'views'));
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-    secret: 'your_secret_key', // Change this to a secure key in production
-    resave: false,
-    saveUninitialized: false,
-}));
+// // Middleware
+// app.use(bodyParser.urlencoded({ extended: true }));
 
-// Initialize Passport and session
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(session({
+//     secret: 'your_secret_key', // Change this to a secure key in production
+//     resave: false,
+//     saveUninitialized: false,
+// }));
 
-// Configure Passport Local Strategy
-passport.use(new Strategy((username, password, done) => {
-    if (username === USER.username && password === USER.password) {
-        return done(null, USER);
-    } else {
-        return done(null, false, { message: 'Invalid username or password' });
-    }
-}));
+// // Initialize Passport and session
+// app.use(passport.initialize());
+// app.use(passport.session());
 
-// Serialize user
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
+// // Configure Passport Local Strategy
+// passport.use(new Strategy((username, password, done) => {
+//     if (username === USER.username && password === USER.password) {
+//         return done(null, USER);
+//     } else {
+//         return done(null, false, { message: 'Invalid username or password' });
+//     }
+// }));
 
-// Deserialize user
-passport.deserializeUser((id, done) => {
-    if (id === USER.id) {
-        done(null, USER);
-    } else {
-        done(new Error('User not found'));
-    }
-});
+// // Serialize user
+// passport.serializeUser((user, done) => {
+//     done(null, user.id);
+// });
 
-// Function to check if user is authenticated
-function isAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect('/login');
-}
+// // Deserialize user
+// passport.deserializeUser((id, done) => {
+//     if (id === USER.id) {
+//         done(null, USER);
+//     } else {
+//         done(new Error('User not found'));
+//     }
+// });
+
+// // Function to check if user is authenticated
+// function isAuthenticated(req, res, next) {
+//     if (req.isAuthenticated()) {
+//         return next();
+//     }
+//     res.redirect('/login');
+// }
 
 // Routes
-app.get('/', isAuthenticated, (req, res) => {
-    res.render('protected', { username: req.user.username });
+app.get('/users/:id', (req, res) => {
+    const userId = req.params.id;
+    logger.info(`GET user details: ${userId}`);
+    res.send(`Details of user ${userId}`);
 });
 
-app.get('/login', (req, res) => {
-    const errorMessage = req.session.errorMessage;
-    req.session.errorMessage = null; // Clear the message after displaying
-    res.render('login', { errorMessage });
+app.post('/user', (req, res) => {
+    logger.info(`POST user details: ${req.body.user}`);
+    res.send(`User: ${req.body.user}`);
 });
 
-app.post('/login', (req, res, next) => {
-    passport.authenticate('local', (err, user, info) => {
-        if (err) { return next(err); }
-        if (!user) {
-            req.session.errorMessage = info.message; // Set the error message in session
-            return res.redirect('/login'); // Redirect back to the login page
-        }
-        req.logIn(user, (err) => {
-            if (err) { return next(err); }
-            return res.redirect('/'); // Successful login
-        });
-    })(req, res, next);
-});
+// app.get('/', isAuthenticated, (req, res) => {
+//     res.render('protected', { username: req.user.username });
+// });
 
-// Updated Logout with Callback
-app.get('/logout', (req, res) => {
-    req.logout((err) => {
-        if (err) {
-            console.error('Logout error:', err);
-            return res.redirect('/'); // Redirect to home or an error page
-        }
-        console.log('User logged out successfully');
-        res.redirect('/login'); // Redirect to login page after successful logout
-    });
-});
+// app.get('/login', (req, res) => {
+//     const errorMessage = req.session.errorMessage;
+//     req.session.errorMessage = null; // Clear the message after displaying
+//     res.render('login', { errorMessage });
+// });
+
+// app.post('/login', (req, res, next) => {
+//     passport.authenticate('local', (err, user, info) => {
+//         if (err) { return next(err); }
+//         if (!user) {
+//             req.session.errorMessage = info.message; // Set the error message in session
+//             return res.redirect('/login'); // Redirect back to the login page
+//         }
+//         req.logIn(user, (err) => {
+//             if (err) { return next(err); }
+//             return res.redirect('/'); // Successful login
+//         });
+//     })(req, res, next);
+// });
+
+// // Updated Logout with Callback
+// app.get('/logout', (req, res) => {
+//     req.logout((err) => {
+//         if (err) {
+//             console.error('Logout error:', err);
+//             return res.redirect('/'); // Redirect to home or an error page
+//         }
+//         console.log('User logged out successfully');
+//         res.redirect('/login'); // Redirect to login page after successful logout
+//     });
+// });
 
 // Start the server
 app.listen(process.env.EXPRESS_PORT, () => {
