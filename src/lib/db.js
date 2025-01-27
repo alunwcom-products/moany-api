@@ -1,26 +1,32 @@
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 // import fs from 'fs';
+import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
 import dotenv from 'dotenv';
 dotenv.config();
 
 // MySQL connection configuration using environment variables
-const connection = mysql.createConnection({
+const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
 });
 
-// Connect to MySQL
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to MySQL:', err);
-        return;
-    }
-    console.log('Connected to MySQL');
-});
+async function authenticate(username, password, logger) {
+    const [ results ] = await connection.query('select * from users where username = ?', [username]);
+    logger.info(JSON.stringify(results, null, 2));
+    const success = 
+        results.length > 0 &&
+        results[0].username &&
+        results[0].password &&
+        results[0].username === username &&
+        compareSync(password, results[0].password);
+    logger.info(`Login attempt: user = '${username}' [success = ${success}]`);
+    return success;
+}
 
-export { connection }
+
+export { authenticate }
 
 // Function to insert transaction records into the database
 // function insertTransactionsFromCSV(csvFilePath) {

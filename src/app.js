@@ -1,8 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import winston from 'winston';
-import { connection } from './lib/db.js';
+import { authenticate } from './lib/db.js';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 const app = express();
@@ -29,16 +30,9 @@ app.get('/users/:id', (req, res) => {
     res.send(`Details of user ${userId}`);
 });
 
-app.post('/user', (req, res) => {
+app.post('/user', async (req, res) => {
     logger.info(`POST user details: ${req.body.user}`);
-    res.send(`User: ${req.body.user}`);
-    connection.query('select * from users', [], (err, result) => {
-        if (err) {
-            logger.error('Error inserting transactions:', err);
-            return;
-        }
-        logger.info(`Result set: ${JSON.stringify(result, null, 2)}`);
-    });
+    res.send({ success: await authenticate(req.body.user, req.body.password, logger)}); 
 });
 
 // Start the server
