@@ -1,6 +1,6 @@
 # README
 
-Experimental Express project using ChatGPT to generate auth code
+Attempt to implement `moany` through NodeJS API...
 
 ```
 % npm i
