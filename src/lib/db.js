@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 // import fs from 'fs';
 import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
 import dotenv from 'dotenv';
+import { generateToken } from './jwt.js';
 dotenv.config();
 
 // MySQL connection configuration using environment variables
@@ -23,7 +24,7 @@ const connection = await mysql.createConnection({
 
 async function authenticate(username, password, logger) {
     const [ results ] = await connection.query('select * from users where username = ?', [username]);
-    logger.debug(JSON.stringify(results, null, 2));
+    logger.info(JSON.stringify(results, null, 2));
     const success = 
         results.length > 0 &&
         results[0].enabled &&
@@ -31,8 +32,19 @@ async function authenticate(username, password, logger) {
         results[0].password &&
         results[0].username === username &&
         compareSync(password, results[0].password);
+
     logger.info(`Login attempt: user = '${username}' [success = ${success}]`);
-    return success;
+
+    if (success) {
+        // Generate JWT
+        const token = generateToken(results[0].id, results[0].username);
+        logger.info(`JWT generated: user = '${username}' [token = '${token}']`);
+        return { 
+            success: true,
+            token: token
+        };
+    }
+    return { success: false };
 }
 
 

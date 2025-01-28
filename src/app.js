@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import winston from 'winston';
 import { authenticate } from './lib/db.js';
+import { authenticateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -32,7 +33,15 @@ app.get('/users/:id', (req, res) => {
 
 app.post('/user', async (req, res) => {
     logger.info(`POST user details: ${req.body.user}`);
-    res.send({ success: await authenticate(req.body.user, req.body.password, logger)}); 
+    res.send(await authenticate(req.body.user, req.body.password, logger)); 
+});
+
+// Protected Route Example
+app.get('/protected', authenticateToken, (req, res) => {
+    res.json({
+        message: 'This is a protected route',
+        user: req.user
+    });
 });
 
 // Start the server
