@@ -1,34 +1,36 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import winston from 'winston';
-import { authenticate } from './lib/db.js';
+import logger from './lib/logger.js';
+import cors from 'cors';
+import { authenticate, getAccounts } from './lib/db.js';
 import { authenticateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const app = express();
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(({ timestamp, level, message }) => {
-            return `${timestamp} [${level}]: ${message}`;
-        })
-    ),
-    transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: 'app.log' })
-    ]
-});
+// var corsOptions = {
+//     origin: 'http://example.com',
+//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+//   }
+
+app.use(cors());
 
 // Routes
 app.get('/users/:id', (req, res) => {
     const userId = req.params.id;
     logger.info(`GET user details: ${userId}`);
     res.send(`Details of user ${userId}`);
+});
+
+app.get('/accounts', authenticateToken, async (req, res) => {
+    const accounts = await getAccounts(logger);
+    // const userId = req.params.id;
+    // logger.info(`GET user details: ${userId}`);
+    // res.send(`Details of user ${userId}`);
+    res.json({ results: accounts });
 });
 
 app.post('/user', async (req, res) => {

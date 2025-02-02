@@ -1,8 +1,9 @@
 import mysql from 'mysql2/promise';
-// import fs from 'fs';
-import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
+import logger from './logger.js';
+import { compareSync } from "bcrypt-ts";
 import dotenv from 'dotenv';
 import { generateToken } from './jwt.js';
+
 dotenv.config();
 
 // MySQL connection configuration using environment variables
@@ -22,7 +23,7 @@ const connection = await mysql.createConnection({
     }
 });
 
-async function authenticate(username, password, logger) {
+async function authenticate(username, password) {
     const [ results ] = await connection.query('select * from users where username = ?', [username]);
     logger.info(JSON.stringify(results, null, 2));
     const success = 
@@ -36,7 +37,6 @@ async function authenticate(username, password, logger) {
     logger.info(`Login attempt: user = '${username}' [success = ${success}]`);
 
     if (success) {
-        // Generate JWT
         const token = generateToken(results[0].id, results[0].username);
         logger.info(`JWT generated: user = '${username}' [token = '${token}']`);
         return { 
@@ -44,40 +44,18 @@ async function authenticate(username, password, logger) {
             token: token
         };
     }
+
     return { success: false };
 }
 
+const getAccounts = async () => {
+    const [ results ] = await connection.query('select * from accounts', []);
+    logger.debug(JSON.stringify(results, null, 2));
 
-export { authenticate }
+    return results;
+}
 
-// Function to insert transaction records into the database
-// function insertTransactionsFromCSV(csvFilePath) {
-//     const transactions = [];
-
-//     // Read and parse the CSV file
-//     fs.createReadStream(csvFilePath)
-//         .pipe(csv())
-//         .on('data', (row) => {
-//             transactions.push(row);
-//         })
-//         .on('end', () => {
-//             const query = 'INSERT INTO transactions (date, description, amount, balance) VALUES ?';
-//             const values = transactions.map(transaction => [
-//                 new Date(transaction.Date),
-//                 transaction.Description,
-//                 parseFloat(transaction.Amount),
-//                 parseFloat(transaction.Balance)
-//             ]);
-
-//             connection.query(query, [values], (err, result) => {
-//                 if (err) {
-//                     console.error('Error inserting transactions:', err);
-//                     return;
-//                 }
-//                 console.log('Transactions inserted:', result.affectedRows);
-//             });
-//         });
-// }
-
-// Call the function with the path to your CSV file
-// insertTransactionsFromCSV('transactions.csv');
+export {
+    authenticate,
+    getAccounts
+ }
