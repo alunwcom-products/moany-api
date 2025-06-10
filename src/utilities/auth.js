@@ -1,21 +1,10 @@
-import 'dotenv/config'; // Import and load dotenv at the very top
-
-// import express from 'express';
 import jwt from 'jsonwebtoken';
-// import bodyParser from 'body-parser';
 import bcrypt from 'bcrypt';
+import 'dotenv/config';
 
-// Import our new modules
 import logger from './logger.js';
 import { initializeDatabase, findUserByUsername } from './lib/database.js';
 
-// const app = express();
-// const port = process.env.PORT || 3000;
-
-// Middleware to parse JSON request bodies
-// app.use(bodyParser.json());
-
-// --- Configuration loaded from .env ---
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION_TIME = process.env.JWT_EXPIRATION_TIME || '1h'; // For initial token and refreshed token
 
@@ -30,9 +19,9 @@ if (!JWT_SECRET) {
 
 // --- Middleware for JWT Validation ---
 // This middleware will also generate a new token if authentication is successful
-async function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+async function authenticateToken(token) {
+    // const authHeader = req.headers['authorization'];
+    // const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
         logger.warn('Authentication attempt without token.');
