@@ -1,9 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import logger from './lib/logger.js';
+import logger from './utilities/logger.js';
 import cors from 'cors';
-import { authenticate, getAccounts } from './lib/db.js';
-import { authenticateToken } from './lib/jwt.js';
+import { authenticate, getAccounts } from './utilities/db.js';
+import { authenticateToken } from './utilities/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -16,9 +16,14 @@ app.use(bodyParser.json());
 //     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 //   }
 
-app.use(cors());
+app.use(cors({ origin: '*.alunw.com' }));
 
 // Routes
+app.get('/healthcheck', (req, res) => {
+    logger.info('GET healthcheck');
+    res.json({ status: 'ok' });
+});
+
 app.get('/users/:id', (req, res) => {
     const userId = req.params.id;
     logger.info(`GET user details: ${userId}`);
