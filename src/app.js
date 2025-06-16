@@ -33,10 +33,13 @@ async function authenticateToken(req, res, next) {
             res.setHeader('X-New-Token', newToken); 
             next();
         }).catch(err => {
-            return res.status(500).json({ message: '#1' });
+            return res.status(500).json({ message: 'Error generating new token.' });
         });
     }).catch(err => {
-        return res.status(500).json({ message: '#2' });
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+        return res.sendStatus(403); // Invalid token, forbidden
     });
 }
 
