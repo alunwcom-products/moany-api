@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise';
-import logger from './logger.js'; // Import the logger
+import logger from '../utilities/logger.js'; // Import the logger
 
 // Database Configuration (from .env)
 const dbConfig = {
