@@ -15,7 +15,7 @@ if (!JWT_SECRET) {
 
 // internal only functions
 async function generateJWT(id, username) {
-    const payload = { userId: id, username: username };
+    const payload = { id: id, username: username };
     try {
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION_TIME });
         logger.info(`JWT generated: ${token}`);
@@ -63,7 +63,7 @@ async function authenticate(username, password) {
 
         logger.info(`User ${username} authenticated.`);
 
-        const token = await generateJWT(user);
+        const token = await generateJWT(user.id, user.username);
         return token
 
     } catch (error) {

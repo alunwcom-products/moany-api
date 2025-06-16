@@ -20,7 +20,7 @@ app.use(cors({
 
 // middleware
 async function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
+   const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token == null) {
@@ -28,22 +28,16 @@ async function authenticateToken(req, res, next) {
         return res.sendStatus(401); // No token, unauthorized
     }
 
-    const payload = await verifyJWT(token)
-    // .then(data => {
-    //     res.setHeader('X-New-Token', newToken); // Send new token in a custom header
-    // })
-    .catch(err => {
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ message: 'Token expired' });
-        }
-        return res.sendStatus(403); // Invalid token, forbidden
+    verifyJWT(token).then(payload => {
+        generateJWT(payload.id, payload.username).then(newToken => {
+            res.setHeader('X-New-Token', newToken); 
+            next();
+        }).catch(err => {
+            return res.status(500).json({ message: '#1' });
+        });
+    }).catch(err => {
+        return res.status(500).json({ message: '#2' });
     });
-
-    const newToken = await generateJWT(payload.userId, payload.username).catch(err => {
-        return res.status(500).json({ message: 'Error generating new token.' });
-    });
-
-    next(); // Proceed to the next middleware/route handler
 }
 
 // Routes
@@ -60,7 +54,10 @@ app.post('/login', async (req, res, next) => {
     });
     if (result) {
         res.setHeader('X-New-Token', result);
-        return res.json({ login: 'success', token: result });
+        return res.json({ 
+            message: 'success', 
+            token: result,
+            payload: await verifyJWT(result) });
     }
     return res.status(401).json({ message: 'Authentication error' });
 });
