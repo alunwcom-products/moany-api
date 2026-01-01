@@ -35,7 +35,9 @@ app.get('/accounts', authenticateToken, async (req, res) => {
 
 app.post('/user', async (req, res) => {
     logger.info(`POST user details: ${req.body.user}`);
-    res.send(await authenticate(req.body.user, req.body.password, logger)); 
+    let result = await authenticate(req.body.user, req.body.password, logger);
+    res.header("X-New-Token", result.token);
+    res.send(result); 
 });
 
 // Protected Route Example
