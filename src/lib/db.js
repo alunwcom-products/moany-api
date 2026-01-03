@@ -55,7 +55,15 @@ const getAccounts = async () => {
     return results;
 }
 
+const getAccountSummary = async () => {
+    const [ results ] = await connection.query('select * from account_summary', []);
+    logger.debug(JSON.stringify(results, null, 2));
+
+    return results;
+}
+
 export {
     authenticate,
-    getAccounts
+    getAccounts,
+    getAccountSummary
  }
