@@ -19,11 +19,12 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Routes
-app.get('/users/:id', (req, res) => {
-    const userId = req.params.id;
-    logger.info(`GET user details: ${userId}`);
-    res.send(`Details of user ${userId}`);
-});
+
+// app.get('/users/:id', (req, res) => {
+//     const userId = req.params.id;
+//     logger.info(`GET user details: ${userId}`);
+//     res.send(`Details of user ${userId}`);
+// });
 
 app.get('/accounts', authenticateToken, async (req, res) => {
     const accounts = await getAccounts(logger);
@@ -43,12 +44,12 @@ app.post('/user', async (req, res) => {
 });
 
 // Protected Route Example
-app.get('/protected', authenticateToken, (req, res) => {
-    res.json({
-        message: 'This is a protected route',
-        user: req.user
-    });
-});
+// app.get('/protected', authenticateToken, (req, res) => {
+//     res.json({
+//         message: 'This is a protected route',
+//         user: req.user
+//     });
+// });
 
 // Start the server
 app.listen(process.env.EXPRESS_PORT, () => {
