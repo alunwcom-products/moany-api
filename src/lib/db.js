@@ -39,13 +39,10 @@ async function authenticate(username, password) {
     if (success) {
         const token = generateToken(results[0].id, results[0].username);
         logger.info(`JWT generated: user = '${username}' [token = '${token}']`);
-        return { 
-            success: true,
-            token: token
-        };
+        return token;
     }
 
-    return { success: false };
+    return undefined;
 }
 
 const getAccounts = async () => {

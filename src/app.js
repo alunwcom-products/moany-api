@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import logger from './lib/logger.js';
 import cors from 'cors';
 import { authenticate, getAccounts, getAccountSummary } from './lib/db.js';
-import { authenticateToken } from './lib/jwt.js';
+import { authenticateToken, generateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -38,9 +38,20 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
 
 app.post('/user', async (req, res) => {
     logger.info(`POST user details: ${req.body.user}`);
-    let result = await authenticate(req.body.user, req.body.password, logger);
-    res.header("X-New-Token", result.token);
-    res.send(result); 
+    const token = await authenticate(req.body.user, req.body.password, logger);
+
+    if (token) {
+        res.header("X-New-Token", token);
+        res.send({
+            success: true,
+            token: token
+        });
+        return;
+    }
+
+    res.status(403).json({
+        success: false
+    })
 });
 
 // Protected Route Example
