@@ -1,12 +1,15 @@
 # README
 
-Attempt to implement `moany` through NodeJS API...
+Migrate `moany` functionality to a new NodeJS API that can be used by a separate front-end.
 
-Keep this to API only ... implement UI elsewhere
+## Usage
+
+API must be configured in `.env` (see `.env.sample` for example values).
 
 ```
 % npm i
 ...
-% node src/app.js
+
+% node run start
 ...
 ```

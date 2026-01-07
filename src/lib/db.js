@@ -45,6 +45,13 @@ async function authenticate(username, password) {
     return undefined;
 }
 
+const getSystemInfo = async () => {
+    const [ results ] = await connection.query('select * from system_info', []);
+    logger.debug(JSON.stringify(results, null, 2));
+
+    return results;
+}
+
 const getAccounts = async () => {
     const [ results ] = await connection.query('select * from accounts', []);
     logger.debug(JSON.stringify(results, null, 2));
@@ -62,5 +69,6 @@ const getAccountSummary = async () => {
 export {
     authenticate,
     getAccounts,
-    getAccountSummary
+    getAccountSummary,
+    getSystemInfo
  }

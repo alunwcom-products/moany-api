@@ -2,8 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import logger from './lib/logger.js';
 import cors from 'cors';
-import { authenticate, getAccounts, getAccountSummary } from './lib/db.js';
-import { authenticateToken, generateToken } from './lib/jwt.js';
+import { authenticate, getAccountSummary, getSystemInfo } from './lib/db.js';
+import { authenticateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -20,49 +20,45 @@ app.use(cors());
 
 // Routes
 
-// app.get('/users/:id', (req, res) => {
-//     const userId = req.params.id;
-//     logger.info(`GET user details: ${userId}`);
-//     res.send(`Details of user ${userId}`);
-// });
-
-app.get('/accounts', authenticateToken, async (req, res) => {
-    const accounts = await getAccounts(logger);
-    res.json({ results: accounts });
-});
-
+// GET account summary
 app.get('/accountSummary', authenticateToken, async (req, res) => {
-    const accounts = await getAccountSummary(logger);
-    res.json({ results: accounts });
+  const accounts = await getAccountSummary(logger);
+  res.json({ results: accounts });
 });
 
+// login/authenticate user
 app.post('/user', async (req, res) => {
-    logger.info(`POST user details: ${req.body.user}`);
-    const token = await authenticate(req.body.user, req.body.password, logger);
+  logger.info(`POST user details: ${req.body.user}`);
+  const token = await authenticate(req.body.user, req.body.password, logger);
 
-    if (token) {
-        res.header("X-New-Token", token);
-        res.send({
-            success: true,
-            token: token
-        });
-        return;
-    }
+  if (token) {
+    res.header("X-New-Token", token);
+    res.send({
+      success: true,
+      token: token
+    });
+    return;
+  }
 
-    res.status(403).json({
-        success: false
-    })
+  res.sendStatus(401);
 });
 
-// Protected Route Example
-// app.get('/protected', authenticateToken, (req, res) => {
-//     res.json({
-//         message: 'This is a protected route',
-//         user: req.user
-//     });
-// });
+// GET healthcheck
+app.get('/healthcheck', async (req, res) => {
+  // check database connectivity
+  const resultSet = await getSystemInfo(logger);
+  // log db_version
+  const db_version = resultSet.filter((row) => row.name === 'db_version');
+  console.debug(`Healthcheck called. [db_version = ${db_version[0].value}]`);
+  // success response
+  res.json({
+    timestamp: new Date().toISOString(),
+    status: 'OK'
+  });
+});
+
 
 // Start the server
 app.listen(process.env.EXPRESS_PORT, () => {
-    logger.info(`Server started on port ${process.env.EXPRESS_PORT}`);
+  logger.info(`Server started on port ${process.env.EXPRESS_PORT}`);
 });
