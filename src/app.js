@@ -2,7 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import logger from './lib/logger.js';
 import cors from 'cors';
-import { authenticate, getAccountSummary, getSystemInfo } from './lib/db.js';
+import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
 import { authenticateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
@@ -25,6 +25,16 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
   const accounts = await getAccountSummary(logger);
   res.json({ results: accounts });
 });
+
+// PUT account
+app.put('/account/:uuid', authenticateToken, async (req, res) => {
+  const uuid = req.params.uuid;
+  //console.debug(req.body);
+  const result = await setAccount(req.body);
+  res.send({
+    success: true
+  })
+})
 
 // login/authenticate user
 app.post('/user', async (req, res) => {
