@@ -27,8 +27,8 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
 });
 
 // PUT account
-app.put('/account/:uuid', authenticateToken, async (req, res) => {
-  const uuid = req.params.uuid;
+app.put('/account/', authenticateToken, async (req, res) => {
+  //const uuid = req.params.uuid;
   //console.debug(req.body);
   const result = await setAccount(req.body);
   res.send({
