@@ -12,6 +12,7 @@ const connection = await mysql.createConnection({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
   // Cast bit(1) fields to boolean
   typeCast: function (field, next) {
     if (field.type === 'BIT' && field.length === 1) {
