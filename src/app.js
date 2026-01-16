@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import logger from './lib/logger.js';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
 import { authenticateToken } from './lib/jwt.js';
 import dotenv from 'dotenv';
@@ -10,6 +11,25 @@ dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
+
+const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 15;
+const RATE_LIMIT_REQUESTS = process.env.RATE_LIMIT_REQUESTS || 100;
+
+const limiter = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MINUTES * 60 * 1000, // 15 minutes
+  limit: RATE_LIMIT_REQUESTS, // limit to each IP per `windowMs`
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: "Too many requests, please try again later.",
+  handler: (req, res, next, options) => {
+    const remote = req.headers['x-forwarded-for'];
+    console.warn(`Rate limit hit! ${req.ip} [${remote}]`);
+    res.status(options.statusCode).send(options.message)
+  },
+});
+
+app.use(limiter);
+app.set('trust proxy', 1);
 
 // var corsOptions = {
 //     origin: 'http://example.com',
