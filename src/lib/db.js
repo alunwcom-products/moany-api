@@ -6,13 +6,18 @@ import { generateToken } from './jwt.js';
 
 dotenv.config();
 
-// MySQL connection configuration using environment variables
-const connection = await mysql.createConnection({
+// mysql2 connection pool
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  // This helps keep the connection alive
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   // Cast bit(1) fields to boolean
   typeCast: function (field, next) {
     if (field.type === 'BIT' && field.length === 1) {
@@ -25,7 +30,7 @@ const connection = await mysql.createConnection({
 });
 
 async function authenticate(username, password) {
-  const [results] = await connection.query('select * from users where username = ?', [username]);
+  const [results] = await pool.query('select * from users where username = ?', [username]);
   logger.info(JSON.stringify(results, null, 2));
   const success =
     results.length > 0 &&
@@ -47,21 +52,21 @@ async function authenticate(username, password) {
 }
 
 const getSystemInfo = async () => {
-  const [results] = await connection.query('select * from system_info', []);
+  const [results] = await pool.query('select * from system_info', []);
   logger.debug(JSON.stringify(results, null, 2));
 
   return results;
 }
 
 const getAccounts = async () => {
-  const [results] = await connection.query('select * from accounts', []);
+  const [results] = await pool.query('select * from accounts', []);
   logger.debug(JSON.stringify(results, null, 2));
 
   return results;
 }
 
 const getAccountSummary = async () => {
-  const [results] = await connection.query('select * from account_summary', []);
+  const [results] = await pool.query('select * from account_summary', []);
   logger.debug(JSON.stringify(results, null, 2));
 
   return results;
@@ -70,13 +75,13 @@ const getAccountSummary = async () => {
 // row should be supplied as JSON
 const setAccount = async (row) => {
   // check if account exists or not - and either insert or update row
-  const [resultSet] = await connection.query('select * from accounts where uuid = ?', [row.uuid]);
+  const [resultSet] = await pool.query('select * from accounts where uuid = ?', [row.uuid]);
   //logger.debug(JSON.stringify(resultSet, null, 2));
 
   if (resultSet.length > 0) {
     // UPDATE
     logger.info(`Updating account ${row.uuid}`);
-    const [results] = await connection.execute(
+    const [results] = await pool.execute(
       'update accounts set account_num = ?, name = ?, type = ?, starting_balance = ?, sortcode = ?, active = ? \
        where uuid = ?',
       [row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active, row.uuid]);
@@ -85,7 +90,7 @@ const setAccount = async (row) => {
   } else {
     // INSERT
     logger.info(`Inserting account ${row.uuid}`);
-    const [results] = await connection.execute(
+    const [results] = await pool.execute(
       'insert into accounts (uuid, account_num, name, type, starting_balance, sortcode, active) values (?,?,?,?,?,?,?)',
       [row.uuid, row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active]);
     //logger.debug(JSON.stringify(results, null, 2));
