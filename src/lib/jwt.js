@@ -17,11 +17,17 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
   // if no token return 401
-  if (token == null) return res.sendStatus(401);
+  if (token == null) {
+    console.debug('HTTP 401 - no token');
+    return res.sendStatus(401);
+  }
   // verify token
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     // if invalid token return 401
-    if (err) return res.sendStatus(401);
+    if (err) {
+      console.debug('HTTP 401 - invalid token');
+      return res.sendStatus(401);
+    }
     // otherwise, if valid generate new token and set response header
     const newToken = generateToken(decoded.userid, decoded.username);
     res.header("X-New-Token", newToken);
