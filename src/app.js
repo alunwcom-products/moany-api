@@ -36,7 +36,9 @@ app.set('trust proxy', 1);
 //     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 //   }
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['X-New-Token']
+}));
 
 // Routes
 
