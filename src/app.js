@@ -31,20 +31,19 @@ const limiter = rateLimit({
 app.use(limiter);
 app.set('trust proxy', 1);
 
-// var corsOptions = {
-//     origin: 'http://example.com',
-//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-//   }
-
-app.use(cors({
-  exposedHeaders: ['X-New-Token']
-}));
+var corsOptions = {
+    exposedHeaders: ['X-New-Token'],
+    //origin: 'http://example.com',
+    //optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+  }
+app.use(cors(corsOptions));
 
 // Routes
 
 // GET account summary
 app.get('/accountSummary', authenticateToken, async (req, res) => {
-  const accounts = await getAccountSummary(logger);
+  const accounts = await getAccountSummary();
+  logger.info(`Got account summary [user = '${req.user.username}']`);
   res.json({ results: accounts });
 });
 
@@ -53,6 +52,7 @@ app.put('/account/', authenticateToken, async (req, res) => {
   //const uuid = req.params.uuid;
   //console.debug(req.body);
   const result = await setAccount(req.body);
+  logger.info(`Set account [user = '${req.user.username}']`);
   res.send({
     success: true
   })
@@ -60,10 +60,10 @@ app.put('/account/', authenticateToken, async (req, res) => {
 
 // login/authenticate user
 app.post('/user', async (req, res) => {
-  logger.info(`POST user details: ${req.body.user}`);
-  const token = await authenticate(req.body.user, req.body.password, logger);
+  const token = await authenticate(req.body.user, req.body.password);
 
   if (token) {
+    logger.info(`Successful authentication for user '${req.body.user}'`);
     res.header("X-New-Token", token);
     res.send({
       success: true,
@@ -72,16 +72,17 @@ app.post('/user', async (req, res) => {
     return;
   }
 
+  logger.warn(`Invalid authentication attempt for user '${req.body.user}'`);
   res.sendStatus(401);
 });
 
 // GET healthcheck
 app.get('/healthcheck', async (req, res) => {
   // check database connectivity
-  const resultSet = await getSystemInfo(logger);
+  const resultSet = await getSystemInfo();
   // log db_version
   const db_version = resultSet.filter((row) => row.name === 'db_version');
-  console.debug(`Healthcheck called. [db_version = ${db_version[0].value}]`);
+  logger.info(`Healthcheck called [db_version = ${db_version[0].value}]`);
   // success response
   res.json({
     timestamp: new Date().toISOString(),

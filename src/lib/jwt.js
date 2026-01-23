@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import logger from './logger.js';
 
 // Secret key for JWT (store this securely, preferably in environment variables)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
@@ -18,14 +19,14 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
   // if no token return 401
   if (token == null) {
-    console.debug('HTTP 401 - no token');
+    logger.debug('HTTP 401 - no token');
     return res.sendStatus(401);
   }
   // verify token
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     // if invalid token return 401
     if (err) {
-      console.debug('HTTP 401 - invalid token');
+      logger.debug('HTTP 401 - invalid token');
       return res.sendStatus(401);
     }
     // otherwise, if valid generate new token and set response header

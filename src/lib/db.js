@@ -31,7 +31,7 @@ const pool = mysql.createPool({
 
 async function authenticate(username, password) {
   const [results] = await pool.query('select * from users where username = ?', [username]);
-  logger.info(JSON.stringify(results, null, 2));
+  logger.debug(JSON.stringify(results, null, 2));
   const success =
     results.length > 0 &&
     results[0].enabled &&
@@ -40,11 +40,11 @@ async function authenticate(username, password) {
     results[0].username === username &&
     compareSync(password, results[0].password);
 
-  logger.info(`Login attempt: user = '${username}' [success = ${success}]`);
+  logger.debug(`Login attempt: user = '${username}' [success = ${success}]`);
 
   if (success) {
     const token = generateToken(results[0].id, results[0].username);
-    logger.info(`JWT generated: user = '${username}' [token = '${token}']`);
+    logger.debug(`JWT generated: user = '${username}' [token = '${token}']`);
     return token;
   }
 
