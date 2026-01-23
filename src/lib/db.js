@@ -31,7 +31,6 @@ const pool = mysql.createPool({
 
 async function authenticate(username, password) {
   const [results] = await pool.query('select * from users where username = ?', [username]);
-  logger.debug(JSON.stringify(results, null, 2));
   const success =
     results.length > 0 &&
     results[0].enabled &&
@@ -40,35 +39,25 @@ async function authenticate(username, password) {
     results[0].username === username &&
     compareSync(password, results[0].password);
 
-  logger.debug(`Login attempt: user = '${username}' [success = ${success}]`);
-
   if (success) {
     const token = generateToken(results[0].id, results[0].username);
-    logger.debug(`JWT generated: user = '${username}' [token = '${token}']`);
     return token;
   }
-
   return undefined;
 }
 
 const getSystemInfo = async () => {
   const [results] = await pool.query('select * from system_info', []);
-  logger.debug(JSON.stringify(results, null, 2));
-
   return results;
 }
 
 const getAccounts = async () => {
   const [results] = await pool.query('select * from accounts', []);
-  logger.debug(JSON.stringify(results, null, 2));
-
   return results;
 }
 
 const getAccountSummary = async () => {
   const [results] = await pool.query('select * from account_summary', []);
-  logger.debug(JSON.stringify(results, null, 2));
-
   return results;
 }
 
@@ -76,26 +65,21 @@ const getAccountSummary = async () => {
 const setAccount = async (row) => {
   // check if account exists or not - and either insert or update row
   const [resultSet] = await pool.query('select * from accounts where uuid = ?', [row.uuid]);
-  //logger.debug(JSON.stringify(resultSet, null, 2));
 
   if (resultSet.length > 0) {
     // UPDATE
-    logger.info(`Updating account ${row.uuid}`);
+    logger.debug(`Updating account ${row.uuid}`);
     const [results] = await pool.execute(
       'update accounts set account_num = ?, name = ?, type = ?, starting_balance = ?, sortcode = ?, active = ? \
        where uuid = ?',
       [row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active, row.uuid]);
-    //logger.debug(JSON.stringify(results, null, 2));
-
   } else {
     // INSERT
-    logger.info(`Inserting account ${row.uuid}`);
+    logger.debug(`Inserting account ${row.uuid}`);
     const [results] = await pool.execute(
       'insert into accounts (uuid, account_num, name, type, starting_balance, sortcode, active) values (?,?,?,?,?,?,?)',
       [row.uuid, row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active]);
-    //logger.debug(JSON.stringify(results, null, 2));
   }
-
   return;
 }
 

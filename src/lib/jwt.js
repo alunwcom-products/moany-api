@@ -31,6 +31,7 @@ const authenticateToken = (req, res, next) => {
     }
     // otherwise, if valid generate new token and set response header
     const newToken = generateToken(decoded.userid, decoded.username);
+    logger.debug('New token generated');
     res.header("X-New-Token", newToken);
     // pass decoded user data from token in request
     req.user = decoded;

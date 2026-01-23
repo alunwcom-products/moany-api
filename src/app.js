@@ -23,7 +23,7 @@ const limiter = rateLimit({
   message: "Too many requests, please try again later.",
   handler: (req, res, next, options) => {
     const remote = req.headers['x-forwarded-for'];
-    console.warn(`Rate limit hit! ${req.ip} [${remote}]`);
+    logger.warn(`Rate limit hit! ${req.ip} [${remote}]`);
     res.status(options.statusCode).send(options.message)
   },
 });
@@ -49,8 +49,6 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
 
 // PUT account
 app.put('/account/', authenticateToken, async (req, res) => {
-  //const uuid = req.params.uuid;
-  //console.debug(req.body);
   const result = await setAccount(req.body);
   logger.info(`Set account [user = '${req.user.username}']`);
   res.send({
