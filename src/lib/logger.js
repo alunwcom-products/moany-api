@@ -1,10 +1,21 @@
 import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import 'dotenv/config';
 
 const logLevel = process.env.LOG_LEVEL || 'info'; // Default log level
 
 const textFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
   return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+});
+
+// Define the rotation transport
+const fileRotateTransport = new DailyRotateFile({
+  filename: 'logs/app-%DATE%.log',
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,      // Compresses old files to save space
+  maxSize: '20m',           // Rotates when the file reaches 20MB
+  maxFiles: '14d',          // Keeps only the last 14 days of logs
+  level: logLevel,
 });
 
 const logger = winston.createLogger({
@@ -17,8 +28,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    // new winston.transports.File({ filename: 'error.log', level: 'error' }), // Log errors to error.log
-    new winston.transports.File({ filename: 'app.log' }) // Log all levels to app.log
+    fileRotateTransport
   ]
 });
 
