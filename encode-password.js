@@ -1,10 +1,12 @@
 import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from 'uuid';
 
 const saltRounds = 11;
 
 async function encode(plainText) {
   const encoded = await bcrypt.hash(plainText, saltRounds);
-  console.log(encoded);
+  //console.log(encoded);
+  return encoded;
 }
 
 if (process.argv.length !== 3) {
@@ -12,5 +14,5 @@ if (process.argv.length !== 3) {
   process.exit(-1);
 }
 
-encode(process.argv[2]);
-
+console.log(`GENERATED UUID:\t${uuidv4()}`);
+console.log(`ENCODED TEXT:\t${await encode(process.argv[2])}`);
