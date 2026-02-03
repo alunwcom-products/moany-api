@@ -4,7 +4,7 @@ import logger from './lib/logger.js';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
-import { authenticateToken } from './lib/jwt.js';
+import { authenticateToken, setCookie } from './lib/jwt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -58,11 +58,13 @@ app.put('/account/', authenticateToken, async (req, res) => {
 
 // login/authenticate user
 app.post('/user', async (req, res) => {
+  // TODO improve logic so this uses same header/cookie response as authenticateToken - factored out function?
   const token = await authenticate(req.body.user, req.body.password);
 
   if (token) {
     logger.info(`Successful authentication for user '${req.body.user}'`);
     res.header("X-New-Token", token);
+    setCookie(res, token);
     res.send({
       success: true,
       token: token
@@ -72,6 +74,13 @@ app.post('/user', async (req, res) => {
 
   logger.warn(`Invalid authentication attempt for user '${req.body.user}'`);
   res.sendStatus(401);
+});
+
+// GET refresh
+app.get('/refresh', authenticateToken, async (req, res) => {
+  //const accounts = await getAccountSummary();
+  logger.info(`Refresh [user = '${req.user.username}']`);
+  res.json({ success: true });
 });
 
 // GET healthcheck
