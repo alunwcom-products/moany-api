@@ -70,7 +70,7 @@ app.post('/session', async (req, res) => {
   }
   // failed authentication
   logger.warn(`Invalid authentication attempt for user '${user}'`);
-  clearCookie(res);
+  // clearCookie(res);
   res.sendStatus(401);
 });
 
