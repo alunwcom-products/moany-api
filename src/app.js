@@ -1,16 +1,13 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import logger from './lib/logger.js';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
-import { authenticateToken, setCookie } from './lib/jwt.js';
-import dotenv from 'dotenv';
+import { authenticateToken, clearCookie, setCookie } from './lib/jwt.js';
 
-dotenv.config();
-
-const app = express();
-app.use(bodyParser.json());
+import 'dotenv/config';
 
 const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 15;
 const RATE_LIMIT_REQUESTS = process.env.RATE_LIMIT_REQUESTS || 100;
@@ -28,17 +25,56 @@ const limiter = rateLimit({
   },
 });
 
+var corsOptions = {
+  //exposedHeaders: ['X-New-Token'],
+  origin: 'http://localhost:5173',
+  credentials: true,
+  //optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+// Instantiate express with middleware
+const app = express();
+app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(cors(corsOptions));
 app.use(limiter);
 app.set('trust proxy', 1);
 
-var corsOptions = {
-    exposedHeaders: ['X-New-Token'],
-    //origin: 'http://example.com',
-    //optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-  }
-app.use(cors(corsOptions));
+// PUBLIC ROUTES
 
-// Routes
+// GET healthcheck
+app.get('/healthcheck', async (req, res) => {
+  // check database connectivity
+  const resultSet = await getSystemInfo();
+  // log db_version
+  const db_version = resultSet.filter((row) => row.name === 'db_version');
+  logger.info(`Healthcheck called [db_version = ${db_version[0].value}]`);
+  // success response
+  res.json({
+    timestamp: new Date().toISOString(),
+    status: 'OK'
+  });
+});
+
+// POST user session (authenticate)
+app.post('/session', async (req, res) => {
+  const token = await authenticate(req.body.user, req.body.password);
+  const user = req.body.user;
+  if (token) {
+    logger.info(`Successful authentication for user '${user}'`);
+    setCookie(res, token);
+    res.send({
+      user,
+    });
+    return;
+  }
+  // failed authentication
+  logger.warn(`Invalid authentication attempt for user '${user}'`);
+  clearCookie(res);
+  res.sendStatus(401);
+});
+
+// PRIVATE ROUTES
 
 // GET account summary
 app.get('/accountSummary', authenticateToken, async (req, res) => {
@@ -56,49 +92,23 @@ app.put('/account/', authenticateToken, async (req, res) => {
   })
 })
 
-// login/authenticate user
-app.post('/user', async (req, res) => {
-  // TODO improve logic so this uses same header/cookie response as authenticateToken - factored out function?
-  const token = await authenticate(req.body.user, req.body.password);
-
-  if (token) {
-    logger.info(`Successful authentication for user '${req.body.user}'`);
-    res.header("X-New-Token", token);
-    setCookie(res, token);
-    res.send({
-      success: true,
-      token: token
-    });
-    return;
-  }
-
-  logger.warn(`Invalid authentication attempt for user '${req.body.user}'`);
-  res.sendStatus(401);
+// GET user session
+app.get('/session', authenticateToken, async (req, res) => {
+  const user = req.user?.username;
+  logger.info(`Got session (refresh) [user = '${user}']`);
+  res.json({ user });
 });
 
-// GET refresh
-app.get('/refresh', authenticateToken, async (req, res) => {
-  //const accounts = await getAccountSummary();
-  logger.info(`Refresh [user = '${req.user.username}']`);
-  res.json({ success: true });
+// DELETE user session
+app.delete('/session', authenticateToken, async (req, res) => {
+  const user = req.user?.username;
+  logger.info(`Delete session [user = '${user}']`);
+  clearCookie(res);
+  res.sendStatus(204);
 });
 
-// GET healthcheck
-app.get('/healthcheck', async (req, res) => {
-  // check database connectivity
-  const resultSet = await getSystemInfo();
-  // log db_version
-  const db_version = resultSet.filter((row) => row.name === 'db_version');
-  logger.info(`Healthcheck called [db_version = ${db_version[0].value}]`);
-  // success response
-  res.json({
-    timestamp: new Date().toISOString(),
-    status: 'OK'
-  });
-});
+// START THE SERVER
 
-
-// Start the server
 app.listen(process.env.EXPRESS_PORT, () => {
   logger.info(`Server started on port ${process.env.EXPRESS_PORT}`);
 });
