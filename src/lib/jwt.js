@@ -17,7 +17,7 @@ const setCookie = (res, token) => {
   res.cookie('token', token, {
     path: '/',
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'Strict',
     maxAge: 15 * 60 * 1000, // TODO config
     secure: process.env.NODE_ENV !== 'development', // TODO config
   });
@@ -27,7 +27,7 @@ const clearCookie = (res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development', // TODO config
-    sameSite: 'Lax'
+    sameSite: 'Strict'
   });
 };
 
