@@ -27,10 +27,13 @@ const limiter = rateLimit({
 
 var corsOptions = {
   //exposedHeaders: ['X-New-Token'],
-  origin: 'http://localhost:5173',
+  //origin: 'http://localhost:5173',
+  origin: process.env.FRONT_END_HOSTNAME || 'http://localhost:5173',
   credentials: true,
   //optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
+
+logger.info(`Preparing server... [EXPRESS_PORT=${process.env.EXPRESS_PORT}, NODE_ENV=${process.env.NODE_ENV}, FRONT_END_HOSTNAME=${process.env.FRONT_END_HOSTNAME}]`);
 
 // Instantiate express with middleware
 const app = express();
