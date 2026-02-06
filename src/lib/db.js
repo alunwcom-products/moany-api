@@ -1,10 +1,9 @@
 import mysql from 'mysql2/promise';
 import logger from './logger.js';
 import { compareSync } from "bcrypt-ts";
-import dotenv from 'dotenv';
 import { generateToken } from './jwt.js';
 
-dotenv.config();
+import 'dotenv/config';
 
 // mysql2 connection pool
 const pool = mysql.createPool({
