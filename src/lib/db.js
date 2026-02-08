@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 import logger from './logger.js';
-import { compareSync } from "bcrypt-ts";
+import { compareSync } from "bcrypt";
 import { generateToken } from './jwt.js';
 
 import 'dotenv/config';
