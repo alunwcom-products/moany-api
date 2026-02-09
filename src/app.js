@@ -4,6 +4,7 @@ import logger from './lib/logger.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
 import { authenticateToken, clearCookie, setCookie } from './lib/jwt.js';
 
@@ -42,6 +43,12 @@ app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(limiter);
 app.set('trust proxy', 1);
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // PUBLIC ROUTES
 
@@ -93,6 +100,43 @@ app.put('/account/', authenticateToken, async (req, res) => {
   res.send({
     success: true
   })
+})
+
+// POST statement (file upload)
+app.post('/statement', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      logger.warn(`Statement upload failed - no file provided [user = '${req.user.username}']`);
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Extract metadata from form data
+    const { statementType, statementDate, description } = req.body;
+    const user = req.user.username;
+
+    // Log the upload details
+    logger.info(`Statement file uploaded [user = '${user}', filename = '${req.file.originalname}', size = ${req.file.size} bytes, type = '${statementType}']`);
+
+    // Return success response with file metadata
+    // The actual file processing will be added later
+    res.json({
+      success: true,
+      file: {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      },
+      metadata: {
+        statementType,
+        statementDate,
+        description,
+      },
+      message: 'File received successfully. Processing will be performed later.'
+    });
+  } catch (error) {
+    logger.error(`Statement upload error [user = '${req.user.username}', error = '${error.message}']`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 })
 
 // GET user session
