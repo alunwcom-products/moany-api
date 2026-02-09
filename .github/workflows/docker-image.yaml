@@ -16,6 +16,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Set short git commit SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -31,4 +35,6 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ secrets.DOCKER_USERNAME }}/moany-api:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/moany-api:latest
+            ${{ secrets.DOCKER_USERNAME }}/moany-api:${{ steps.vars.outputs.sha_short }}
