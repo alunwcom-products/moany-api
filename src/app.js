@@ -4,8 +4,13 @@ import logger from './lib/logger.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import { authenticate, getAccountSummary, getSystemInfo, setAccount } from './lib/db.js';
+import multer from 'multer';
+import { authenticate, calculateAccountBalances, getAccountByUuid, getAccountSummary, getSystemInfo, setAccount, storeTransactions } from './lib/db.js';
+import parseChaseStatement from './parsers/chase-20230831.js';
+import parseMCardStatement from './parsers/mastercard-20250111.js';
+import parseNatwestDebit from './parsers/natwest-debit-20250130.js';
 import { authenticateToken, clearCookie, setCookie } from './lib/jwt.js';
+import { extractPdfText } from './lib/pdf.js';
 
 import 'dotenv/config';
 
@@ -38,10 +43,26 @@ logger.info(`Preparing server... [EXPRESS_PORT=${process.env.EXPRESS_PORT}, NODE
 // Instantiate express with middleware
 const app = express();
 app.use(cookieParser());
-app.use(bodyParser.json());
+// Increase body size limits to allow larger uploads and large JSON bodies
+app.use(bodyParser.json({ limit: '20mb' })); // TODO make configurable
+app.use(bodyParser.urlencoded({ limit: '20mb', extended: true })); // TODO make configurable
 app.use(cors(corsOptions));
 app.use(limiter);
 app.set('trust proxy', 1);
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, fieldSize: 2 * 1024 * 1024 } // 10MB file, 2MB fields // TODO make configurable
+});
+
+// statement parsers (TODO factor out)
+const parsers = {
+  chase: parseChaseStatement,
+  mcard: parseMCardStatement,
+  nwdeb: parseNatwestDebit
+
+}
 
 // PUBLIC ROUTES
 
@@ -94,6 +115,81 @@ app.put('/account/', authenticateToken, async (req, res) => {
     success: true
   })
 })
+
+// POST statement (file upload)
+app.post('/statement', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const {statementType} = req.body;
+    const user = req.user?.username;
+    const file = req.file;
+
+    if (!file) {
+      logger.warn(`Statement upload failed - no file provided [user = '${user}']`);
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    if (!statementType || statementType.length === 0) {
+      logger.warn(`Statement upload failed - no statement type provided [user = '${user}']`);
+      return res.status(400).json({ error: 'No statement type provided' });
+    }
+
+    const parser = parsers[statementType];
+    if (!parser) {
+      logger.warn(`Statement upload failed - no parser found to match statement type '${statementType}' [user = '${user}']`);
+      return res.status(400).json({ error: 'Invalid statement type provided' });
+    }
+
+    logger.info(`Statement file uploaded [user = '${user}', filename = '${file.originalname}', mimetype = ${file.mimetype}, size = ${file.size} bytes, type = '${statementType}']`);
+
+    // parse uploaded file 
+
+    let transactions; // parsed transactions
+
+    if (file.mimetype === 'application/pdf') {
+      const pdfText = await extractPdfText(file.buffer);
+      transactions = await parser(pdfText, file.originalname);
+
+      // TODO only handling PDFs currently
+      // } else if (file.mimetype === 'text/csv') {
+      //     logger.info('Handling CSV file');
+      //     await new Promise((resolve, reject) => {
+      //         fs.createReadStream(filePath)
+      //             .pipe(csv())
+      //             .on('data', (row) => {
+      //                 transactions.push(row);
+      //             })
+      //             .on('end', resolve)
+      //             .on('error', reject);
+      //     });
+
+    } else {
+      logger.warn(`Statement upload failed - unsupported file type [user = '${user}']`);
+      return res.status(400).json({ error: 'Unsupported file type' });
+    }
+
+    if (transactions.length > 0) {
+      logger.info(`${transactions.length} transactions received from statement`);
+      // persist transactions
+      await storeTransactions(transactions);
+      // update net amounts and account balance
+      const account = await getAccountByUuid(transactions[0].account);
+      calculateAccountBalances(account);
+
+    } else {
+      logger.warn(`Statement upload failed - no transactions found in file [user = '${user}']`);
+      return res.status(400).json({ error: 'No transactions found in the file' });
+    }
+
+  } catch (error) {
+    logger.error(`Statement upload error [user = '${req.user.username}', error = '${error.message}']`);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+
+  res.json({
+    success: true,
+    message: 'File uploaded successfully.'
+  });
+});
 
 // GET user session
 app.get('/session', authenticateToken, async (req, res) => {

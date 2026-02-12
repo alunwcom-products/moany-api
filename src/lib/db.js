@@ -82,10 +82,143 @@ const setAccount = async (row) => {
   return;
 }
 
+async function getAccountByNumber(accountNumStr) {
+  try {
+    const query = 'SELECT uuid, account_num, name, type, starting_balance FROM accounts WHERE account_num = ?';
+    const [results, fields] = await pool.query(
+      query, [accountNumStr]
+    );
+    if (results.length !== 1) {
+      throw new Error(`No matching account found for '${accountNumStr}'!`);
+    }
+    return results[0];
+
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
+async function getAccountByUuid(uuid) {
+  try {
+    const query = 'SELECT * FROM accounts WHERE uuid = ?';
+    const [results, fields] = await pool.query(
+      query, [uuid]
+    );
+    if (results.length !== 1) {
+      throw new Error(`No matching account found for '${uuid}'!`);
+    }
+    return results[0];
+
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
+async function storeTransactions(transactions) {
+  try {
+    const query = 'INSERT INTO transactions (uuid, statement_amount, description, comment, entry_date,\
+    source_name, source_row, source_type, statement_balance, account_balance, trans_date, type, account,\
+    category, net_amount) VALUES ?';
+
+    const values = transactions.map((row) => [
+      row.uuid,
+      row.statement_amount,
+      row.description,
+      row.comment,
+      row.entry_date,
+      row.source_name,
+      row.source_row,
+      row.source_type,
+      row.statement_balance,
+      row.account_balance,
+      row.trans_date,
+      row.type,
+      row.account,
+      row.category,
+      row.net_amount
+    ]);
+
+    // bulk insert doesn't work with 'execute()'! https://github.com/sidorares/node-mysql2/issues/830
+    const [results] = await pool.query(
+      query, [values]
+    );
+
+    logger.info(`Transactions inserted: ${results.affectedRows}`);
+
+    return results.affectedRows;
+
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
+// expecting autocommit = off for this - to allow locking and rollback, but works either way
+async function calculateAccountBalances(account) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query('BEGIN');
+
+    const query = 'SELECT * FROM transactions WHERE account = ? ORDER BY trans_date, source_row FOR UPDATE';
+    const [rows, fields] = await conn.query(
+      query, [account.uuid]
+    );
+
+    if (account.type !== 'DEBIT' && account.type !== 'CREDIT') {
+      throw new Error(`Account type not valid [${account.uuid}]!`);
+    }
+    const multiplier = (account.type === 'DEBIT' ? 1 : -1);
+    let account_balance = parseFloat(account.starting_balance);
+
+    for (const row of rows) {
+      const updatedRow = { ...row };
+
+      // calculate net_amount
+      // need to handle cases where statement_amount is not defined (must have either statement_amount or net_amount)
+      let net_amount = 0;
+      if (row.statement_amount && row.statement_amount.length > 0) {
+        net_amount = parseFloat(row.statement_amount) * multiplier;
+      }
+      if (row.net_amount && row.net_amount.length > 0) {
+        net_amount = parseFloat(row.net_amount);
+      }
+      updatedRow.net_amount = net_amount;
+
+      // calculate account_balance
+      account_balance += net_amount;
+      updatedRow.account_balance = account_balance;
+
+      logger.debug(`${updatedRow.statement_amount} | ${updatedRow.statement_balance} | ${updatedRow.net_amount} | ${updatedRow.account_balance}`);
+
+      // save transaction
+      const query = 'UPDATE transactions SET net_amount = ?, account_balance = ?  WHERE uuid = ?';
+      const [rows, fields] = await conn.query(
+        query, [updatedRow.net_amount, updatedRow.account_balance, updatedRow.uuid]
+      );
+    }
+
+    await conn.query('COMMIT');
+
+  } catch (error) {
+    await conn.query('ROLLBACK');
+    logger.error(error);
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
 export {
   authenticate,
+  calculateAccountBalances,
+  getAccountByNumber,
+  getAccountByUuid,
   getAccounts,
   getAccountSummary,
   getSystemInfo,
   setAccount,
+  storeTransactions,
 }
