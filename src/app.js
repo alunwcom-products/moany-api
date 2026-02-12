@@ -76,7 +76,8 @@ app.get('/healthcheck', async (req, res) => {
   // success response
   res.json({
     timestamp: new Date().toISOString(),
-    status: 'OK'
+    status: 'OK',
+    version: process.env.APP_VERSION || 'development',
   });
 });
 
