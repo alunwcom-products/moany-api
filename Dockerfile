@@ -1,6 +1,10 @@
 # Use the official Node.js image as the base image
 FROM node:24-alpine
 
+# COMMIT_HASH is set in GitHub actions build, and passed to app as envvar
+ARG COMMIT_HASH
+ENV APP_VERSION=$COMMIT_HASH
+
 # Set the working directory inside the container
 WORKDIR /app
 
