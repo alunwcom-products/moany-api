@@ -3,14 +3,21 @@ import logger from './logger.js';
 
 // Secret key for JWT (store this securely, preferably in environment variables)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m';
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '15'; // in minutes
 
-const generateToken = (userid, username) => {
-  return jwt.sign(
-    { userid, username },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRY }
+const generateToken = (req, userid, username) => {
+  // create expiry time manually to allow it to be returned in api response
+  const now = Date.now();
+  const exp = Math.floor(now / 1000) + (60 * JWT_EXPIRY);
+  // store user token details in req object 
+  req.user = {
+    userid, username, exp
+  };
+
+  const token =  jwt.sign(
+    req.user, JWT_SECRET
   );
+  return token;
 };
 
 const setCookie = (res, token) => {
@@ -52,12 +59,9 @@ const authenticateToken = (req, res, next) => {
       return res.sendStatus(401);
     }
     // otherwise, if valid generate new token and set response header
-    const newToken = generateToken(decoded.userid, decoded.username);
+    const newToken = generateToken(req, decoded.userid, decoded.username);
     logger.debug('New token generated');
-    // res.header("X-New-Token", newToken);
     setCookie(res, newToken);
-    // pass decoded user data from token in request
-    req.user = decoded;
     next();
   });
 };

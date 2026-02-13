@@ -30,6 +30,19 @@ const pool = mysql.createPool({
 
 async function authenticate(username, password) {
   const [results] = await pool.query('select * from users where username = ?', [username]);
+  if (results.length === 0) {
+    // username not found
+    logger.warn(`Authentication failed: user '${username}' not found`);
+    return undefined;
+  }
+
+  if (results.length > 1) {
+    // multiple matching usernames??
+    logger.warn(`Authentication failed: multiple matching username records found for '${username}'`);
+    return undefined;
+  }
+
+  // is valid and matching username and password?
   const success =
     results.length > 0 &&
     results[0].enabled &&
@@ -38,11 +51,7 @@ async function authenticate(username, password) {
     results[0].username === username &&
     compareSync(password, results[0].password);
 
-  if (success) {
-    const token = generateToken(results[0].id, results[0].username);
-    return token;
-  }
-  return undefined;
+  return success ? results[0] : undefined;
 }
 
 const getSystemInfo = async () => {

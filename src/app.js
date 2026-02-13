@@ -9,7 +9,7 @@ import { authenticate, calculateAccountBalances, getAccountByUuid, getAccountSum
 import parseChaseStatement from './parsers/chase-20230831.js';
 import parseMCardStatement from './parsers/mastercard-20250111.js';
 import parseNatwestDebit from './parsers/natwest-debit-20250130.js';
-import { authenticateToken, clearCookie, setCookie } from './lib/jwt.js';
+import { authenticateToken, clearCookie, generateToken, setCookie } from './lib/jwt.js';
 import { extractPdfText } from './lib/pdf.js';
 
 import 'dotenv/config';
@@ -83,18 +83,22 @@ app.get('/healthcheck', async (req, res) => {
 
 // POST user session (authenticate)
 app.post('/session', async (req, res) => {
-  const token = await authenticate(req.body.user, req.body.password);
-  const user = req.body.user;
-  if (token) {
-    logger.info(`Successful authentication for user '${user}'`);
+  const result = await authenticate(req.body.user, req.body.password);
+
+  if (result) {
+    const token = generateToken(req, result.id, result.username);
+    logger.info(`Successful authentication for user '${result.username}'`);
     setCookie(res, token);
     res.send({
-      user,
+      id: req.user.userid,
+      user: req.user.username,
+      exp: req.user.exp,
     });
     return;
   }
+
   // failed authentication
-  logger.warn(`Invalid authentication attempt for user '${user}'`);
+  logger.warn(`Invalid authentication attempt for user '${req.body.user}'`);
   // clearCookie(res);
   res.sendStatus(401);
 });
@@ -120,7 +124,7 @@ app.put('/account/', authenticateToken, async (req, res) => {
 // POST statement (file upload)
 app.post('/statement', authenticateToken, upload.single('file'), async (req, res) => {
   try {
-    const {statementType} = req.body;
+    const { statementType } = req.body;
     const user = req.user?.username;
     const file = req.file;
 
@@ -194,9 +198,13 @@ app.post('/statement', authenticateToken, upload.single('file'), async (req, res
 
 // GET user session
 app.get('/session', authenticateToken, async (req, res) => {
-  const user = req.user?.username;
-  logger.info(`Got session (refresh) [user = '${user}']`);
-  res.json({ user });
+  const { userid, username } = req.user;
+  logger.info(`Got session (refresh) [user = '${req.user.username}']`);
+  res.send({
+    id: req.user.userid,
+    user: req.user.username,
+    exp: req.user.exp,
+  });
 });
 
 // DELETE user session
