@@ -1,7 +1,6 @@
 import mysql from 'mysql2/promise';
 import logger from './logger.js';
 import { compareSync } from "bcrypt";
-import { generateToken } from './jwt.js';
 
 import 'dotenv/config';
 
@@ -67,6 +66,31 @@ const getAccounts = async () => {
 const getAccountSummary = async () => {
   const [results] = await pool.query('select * from account_summary', []);
   return results;
+}
+
+const getMonthlyTotals = async () => {
+  const [results] = await pool.query('select * from monthly_totals', []);
+
+  // convert the yearmonth to the last day of each month
+  const dateResults = results.map((row) => {
+    const newRow = row;
+    const yearmonth = new String(newRow.yearmonth); // convert number to string
+
+    if (yearmonth.length !== 6) {
+      throw new Error(`Invalid yearmonth in monthly_totals [${row.yearmonth}]`);
+    }
+
+    const year = parseInt(yearmonth.substring(0, 4));
+    const month = parseInt(yearmonth.substring(4, 6));
+
+    const lastDayTimestamp = Date.UTC(year, month, 0);
+    const lastDay = new Date(lastDayTimestamp);
+
+    newRow.enddate = lastDay;
+    return newRow;
+  });
+
+  return dateResults;
 }
 
 // row should be supplied as JSON
@@ -227,6 +251,7 @@ export {
   getAccountByUuid,
   getAccounts,
   getAccountSummary,
+  getMonthlyTotals,
   getSystemInfo,
   setAccount,
   storeTransactions,

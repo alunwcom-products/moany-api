@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
-import { authenticate, calculateAccountBalances, getAccountByUuid, getAccountSummary, getSystemInfo, setAccount, storeTransactions } from './lib/db.js';
+import { authenticate, calculateAccountBalances, getAccountByUuid, getAccountSummary, getMonthlyTotals, getSystemInfo, setAccount, storeTransactions } from './lib/db.js';
 import parseChaseStatement from './parsers/chase-20230831.js';
 import parseMCardStatement from './parsers/mastercard-20250111.js';
 import parseNatwestDebit from './parsers/natwest-debit-20250130.js';
@@ -213,6 +213,13 @@ app.delete('/session', authenticateToken, async (req, res) => {
   logger.info(`Delete session [user = '${user}']`);
   clearCookie(res);
   res.sendStatus(204);
+});
+
+// GET monthly totals
+app.get('/monthly-totals', authenticateToken, async (req, res) => {
+  const totals = await getMonthlyTotals();
+  logger.info(`Got monthly totals [user = '${req.user.username}']`);
+  res.json({ results: totals });
 });
 
 // START THE SERVER
