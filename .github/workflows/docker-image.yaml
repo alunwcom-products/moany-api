@@ -40,3 +40,5 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME || 'local' }}/moany-api:latest
             ${{ secrets.DOCKER_USERNAME || 'local' }}/moany-api:${{ steps.vars.outputs.sha_short }}
+          build-args: |
+            COMMIT_HASH=${{ steps.vars.outputs.sha_short }}
