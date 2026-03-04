@@ -151,6 +151,9 @@ async function getAccountByUuid(uuid) {
 }
 
 async function storeTransactions(transactions) {
+
+  logger.debug(`storeTransactions() called [count = ${transactions.length}]`);
+
   try {
     const query = 'INSERT INTO transactions (uuid, statement_amount, description, comment, entry_date,\
     source_name, source_row, source_type, statement_balance, account_balance, trans_date, type, account,\
@@ -181,6 +184,8 @@ async function storeTransactions(transactions) {
 
     logger.info(`Transactions inserted: ${results.affectedRows}`);
 
+    logger.debug('storeTransactions() completed successfully');
+
     return results.affectedRows;
 
   } catch (error) {
@@ -191,6 +196,9 @@ async function storeTransactions(transactions) {
 
 // expecting autocommit = off for this - to allow locking and rollback, but works either way
 async function calculateAccountBalances(account) {
+
+  logger.debug('calculateAccountBalances() called');
+
   let conn;
   try {
     conn = await pool.getConnection();
@@ -225,7 +233,7 @@ async function calculateAccountBalances(account) {
       account_balance += net_amount;
       updatedRow.account_balance = account_balance;
 
-      logger.debug(`${updatedRow.statement_amount} | ${updatedRow.statement_balance} | ${updatedRow.net_amount} | ${updatedRow.account_balance}`);
+      // logger.debug(`${updatedRow.statement_amount} | ${updatedRow.statement_balance} | ${updatedRow.net_amount} | ${updatedRow.account_balance}`);
 
       // save transaction
       const query = 'UPDATE transactions SET net_amount = ?, account_balance = ?  WHERE uuid = ?';
@@ -243,6 +251,8 @@ async function calculateAccountBalances(account) {
   } finally {
     conn.release();
   }
+
+  logger.debug('calculateAccountBalances() completed successfully');
 }
 
 export {

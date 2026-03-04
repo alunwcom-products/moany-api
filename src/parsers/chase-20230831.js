@@ -5,6 +5,8 @@ import { getAccountByNumber } from "../lib/db.js";
 
 export default async function parseTransactions(pdfText, pdfFilename) {
 
+  logger.debug('parseTransactions() called');
+
   const accountNumberStr = getChaseAccountNumber(pdfText);
   // logger.debug(accountNumberStr);
   const account = await getAccountByNumber(accountNumberStr);
@@ -19,7 +21,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
   let match;
 
   while ((match = transactionRegex.exec(cleanedText)) !== null) {
-    logger.debug('Match found: [\'%s\',\'%s\',\'%s\',\'%s\']', match[1], match[2], match[3], match[4]);
+    // logger.debug('Match found: [\'%s\',\'%s\',\'%s\',\'%s\']', match[1], match[2], match[3], match[4]);
 
     if (match[4]) { // this regex group is 'undefined' for opening and closing balances
       let description = match[2].trim();
@@ -49,36 +51,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
     }
   }
 
-  /*
-  while ((match = transactionRegex.exec(pdfText)) !== null) {
-    logger.debug('Match found: [\'%s\',\'%s\',\'%s\',\'%s\']', match[1], match[2], match[3], match[4]);
-
-    // const transactionDate = getDateInRange(match[1], startDate, endDate);
-    const postingDate = getDateInRange(match[2], startDate, endDate); // use posting date rather than transaction date
-
-    const statement_amount = getAmountFromString(match[5], match[6]);
-    const multiplier = -1;
-    const net_amount = statement_amount * multiplier;
-
-    transactions.push({
-      uuid: uuidv4(),
-      statement_amount,
-      description: `${match[3]} ${match[4]}`,
-      comment: null,
-      entry_date: new Date(),
-      source_name: pdfFilename,
-      source_row: ++sourceRow,
-      source_type: 'STATEMENT',
-      statement_balance: null,
-      account_balance: null,
-      trans_date: postingDate,
-      type: null,
-      account: account.uuid,
-      category: null,
-      net_amount
-    });
-  }
-  */
+  logger.debug('parseTransactions() completed successfully');
 
   return transactions;
 }

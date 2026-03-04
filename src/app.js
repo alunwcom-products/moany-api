@@ -123,6 +123,7 @@ app.put('/account/', authenticateToken, async (req, res) => {
 
 // POST statement (file upload)
 app.post('/statement', authenticateToken, upload.single('file'), async (req, res) => {
+  logger.debug('POST /statement called');
   try {
     const { statementType } = req.body;
     const user = req.user?.username;
@@ -178,7 +179,7 @@ app.post('/statement', authenticateToken, upload.single('file'), async (req, res
       await storeTransactions(transactions);
       // update net amounts and account balance
       const account = await getAccountByUuid(transactions[0].account);
-      calculateAccountBalances(account);
+      await calculateAccountBalances(account);
 
     } else {
       logger.warn(`Statement upload failed - no transactions found in file [user = '${user}']`);
@@ -189,6 +190,8 @@ app.post('/statement', authenticateToken, upload.single('file'), async (req, res
     logger.error(`Statement upload error [user = '${req.user.username}', error = '${error.message}']`);
     return res.status(500).json({ error: 'Internal server error' });
   }
+
+  logger.debug('POST /statement completed successfully');
 
   res.json({
     success: true,

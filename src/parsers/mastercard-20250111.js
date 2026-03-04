@@ -31,6 +31,8 @@ import { getAccountByNumber } from "../lib/db.js";
 
 export default async function parseStatement(pdfText, pdfFilename) {
 
+  logger.debug('parseTransactions() called');
+
   // logger.debug(`parseStatement [${pdfFilename}]:\n${pdfText}`);
 
   const accountNumber = getMastercardAccountNumber(pdfText)[1];
@@ -108,7 +110,8 @@ export default async function parseStatement(pdfText, pdfFilename) {
   // sort on transacyion date and source row (mastercard payment is not shown in order on statement)
   transactions.sort((a, b) => a.trans_date - b.trans_date || a.sourceRow - b.sourceRow);
 
-  // logger.debug(JSON.stringify(transactions, null, 2));
+  logger.debug('parseTransactions() completed successfully');
+
   return transactions;
 }
 
