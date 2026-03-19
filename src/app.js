@@ -5,12 +5,23 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
-import { authenticate, calculateAccountBalances, getAccountByUuid, getAccountSummary, getMonthlyTotals, getSystemInfo, setAccount, storeTransactions } from './lib/db.js';
+import { 
+  authenticate, 
+  calculateAccountBalances, 
+  getAccountByUuid, 
+  getAccountSummary, 
+  getMonthlyTotals, 
+  getSystemInfo, 
+  getTransactions, 
+  setAccount, 
+  storeTransactions
+} from './lib/db.js';
 import parseChaseStatement from './parsers/chase-20230831.js';
 import parseMCardStatement from './parsers/mastercard-20250111.js';
 import parseNatwestDebit from './parsers/natwest-debit-20250130.js';
 import { authenticateToken, clearCookie, generateToken, setCookie } from './lib/jwt.js';
 import { extractPdfText } from './lib/pdf.js';
+import { MAX_DATE, MIN_DATE, parseDate } from './lib/date.js';
 
 import 'dotenv/config';
 
@@ -110,6 +121,36 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
   const accounts = await getAccountSummary();
   logger.info(`Got account summary [user = '${req.user.username}']`);
   res.json({ results: accounts });
+});
+
+// PUT account
+app.put('/account/', authenticateToken, async (req, res) => {
+  const result = await setAccount(req.body);
+  logger.info(`Set account [user = '${req.user.username}']`);
+  res.send({
+    success: true
+  })
+})
+
+// GET transactions
+app.get('/transactions', authenticateToken, async (req, res) => {
+
+  const limit = Number(req.query.limit) || 1000; // TODO configurable default?
+  const offset = Number(req.query.offset) || 0;
+
+  // If single account (a string) wrap as array
+  // filter(Boolean) handles undefined account parameter
+  const accounts = Array.isArray(req.query.account) 
+    ? req.query.account 
+    : [req.query.account].filter(Boolean);
+
+  // Get start and end dates, if no date use 'min' or 'max' date
+  const startDate = req.query.startDate ? parseDate(req.query.startDate) : MIN_DATE;
+  const endDate = req.query.endDate ? parseDate(req.query.endDate) : MAX_DATE;
+
+  const transactions = await getTransactions(limit, offset, accounts, startDate, endDate);
+  logger.info(`Got transactions [user = '${req.user.username}', count = ${transactions.length}]`);
+  res.json(transactions);
 });
 
 // PUT account

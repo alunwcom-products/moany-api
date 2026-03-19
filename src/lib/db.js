@@ -3,6 +3,7 @@ import logger from './logger.js';
 import { compareSync } from "bcrypt";
 
 import 'dotenv/config';
+import { formatDate } from './date.js';
 
 // mysql2 connection pool
 const pool = mysql.createPool({
@@ -67,6 +68,40 @@ const getAccounts = async () => {
 const getAccountSummary = async () => {
   const [results] = await pool.query('select * from account_summary', []);
   return results;
+}
+
+const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
+  let transactionsSql, transactionsParams, countSql, countParams;
+
+  if (accounts.length < 1) {
+    // return results for all accounts
+    transactionsSql = 'SELECT * FROM transactions WHERE trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
+    transactionsParams = [formatDate(startDate), formatDate(endDate), limit, offset];
+    countSql = 'SELECT COUNT(*) AS count FROM transactions WHERE trans_date BETWEEN ? AND ?';
+    countParams = [formatDate(startDate), formatDate(endDate)];
+  } else {
+    // return results for specified accounts
+    transactionsSql = 'SELECT * FROM transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
+    transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
+    countSql = 'SELECT COUNT(*) AS count FROM transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ?';
+    countParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
+  }
+
+  const [results] = await pool.query(transactionsSql, transactionsParams);
+
+  const [[countRow]] = await pool.query(countSql, countParams);
+  const count = countRow ? Object.values(countRow)[0] : -1; // only expecting a single field result
+  if (count < 0) {
+    throw new Error('Invalid response to count(*) query!');
+  }
+
+  return {
+    results,
+    totalCount: Number(count),
+    resultCount: results.length,
+    offset: offset,
+    limit: limit
+  };
 }
 
 const getMonthlyTotals = async () => {
@@ -264,6 +299,7 @@ export {
   getAccountSummary,
   getMonthlyTotals,
   getSystemInfo,
+  getTransactions,
   setAccount,
   storeTransactions,
 }
