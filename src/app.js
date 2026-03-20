@@ -25,8 +25,8 @@ import { MAX_DATE, MIN_DATE, parseDate } from './lib/date.js';
 
 import 'dotenv/config';
 
-const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 15;
-const RATE_LIMIT_REQUESTS = process.env.RATE_LIMIT_REQUESTS || 100;
+const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 5;
+const RATE_LIMIT_REQUESTS = process.env.RATE_LIMIT_REQUESTS || 150;
 
 const limiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MINUTES * 60 * 1000, // 15 minutes
@@ -135,7 +135,7 @@ app.put('/account/', authenticateToken, async (req, res) => {
 // GET transactions
 app.get('/transactions', authenticateToken, async (req, res) => {
 
-  const limit = Number(req.query.limit) || 1000; // TODO configurable default?
+  const limit = Number(req.query.limit) || 100; // TODO configurable default?
   const offset = Number(req.query.offset) || 0;
 
   // If single account (a string) wrap as array
@@ -148,9 +148,9 @@ app.get('/transactions', authenticateToken, async (req, res) => {
   const startDate = req.query.startDate ? parseDate(req.query.startDate) : MIN_DATE;
   const endDate = req.query.endDate ? parseDate(req.query.endDate) : MAX_DATE;
 
-  const transactions = await getTransactions(limit, offset, accounts, startDate, endDate);
-  logger.info(`Got transactions [user = '${req.user.username}', count = ${transactions.length}]`);
-  res.json(transactions);
+  const response = await getTransactions(limit, offset, accounts, startDate, endDate);
+  logger.info(`Got transactions [user = '${req.user.username}', count = ${response.results.length} offset/limit = ${offset}/${limit}]`);
+  res.json(response);
 });
 
 // PUT account
