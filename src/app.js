@@ -10,6 +10,7 @@ import {
   calculateAccountBalances, 
   getAccountByUuid, 
   getAccountSummary, 
+  getCategories, 
   getMonthlyTotals, 
   getSystemInfo, 
   getTransactions, 
@@ -130,7 +131,14 @@ app.put('/account/', authenticateToken, async (req, res) => {
   res.send({
     success: true
   })
-})
+});
+
+// GET categories
+app.get('/categories', authenticateToken, async (req, res) => {
+  const categories = await getCategories();
+  logger.info(`Got categories [user = '${req.user.username}']`);
+  res.json({ results: categories });
+});
 
 // GET transactions
 app.get('/transactions', authenticateToken, async (req, res) => {

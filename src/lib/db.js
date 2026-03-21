@@ -70,6 +70,11 @@ const getAccountSummary = async () => {
   return results;
 }
 
+const getCategories = async () => {
+  const [results] = await pool.query('select * from category_tree', []);
+  return results;
+}
+
 const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
   let transactionsSql, transactionsParams, countSql, countParams;
 
@@ -297,6 +302,7 @@ export {
   getAccountByUuid,
   getAccounts,
   getAccountSummary,
+  getCategories,
   getMonthlyTotals,
   getSystemInfo,
   getTransactions,
