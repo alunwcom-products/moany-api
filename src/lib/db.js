@@ -72,7 +72,7 @@ const getAccountSummary = async () => {
 }
 
 const getCategories = async () => {
-  const [results] = await pool.query('select * from category_tree', []);
+  const [results] = await pool.query('select * from category_tree order by name', []);
   return results;
 }
 
@@ -196,7 +196,7 @@ const setTransaction = async (row) => {
 
   // validate transaction
   if (!row.account) throw new Error('Account missing.');
-  if (!row.net_amount) throw new Error('Net amount missing.');
+  // if (!row.net_amount) throw new Error('Net amount missing.'); // zero value fails this test, should make 0 database default
   if (!row.trans_date) throw new Error('Transaction date missing.');
   if (!row.source_type) throw new Error('Source type missing.');
 
