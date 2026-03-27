@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import logger from './logger.js';
 import { compareSync } from "bcrypt";
+import { v4 as uuidv4 } from 'uuid';
 
 import 'dotenv/config';
 import { formatDate } from './date.js';
@@ -190,6 +191,76 @@ async function getAccountByUuid(uuid) {
   }
 }
 
+// insert/update transaction (dependent on whether uuid is set)
+const setTransaction = async (row) => {
+
+  // validate transaction
+  if (!row.account) throw new Error('Account missing.');
+  if (!row.net_amount) throw new Error('Net amount missing.');
+  if (!row.trans_date) throw new Error('Transaction date missing.');
+  if (!row.source_type) throw new Error('Source type missing.');
+
+  if (!row.uuid) {
+    // insert new transaction
+    row.uuid = uuidv4();
+
+    // don't set entry_date, created or modified - these will be set in database!
+    const [results] = await pool.execute(
+      'insert into transactions (uuid, statement_amount, description, comment, source_name, \
+       source_row, source_type, statement_balance, account_balance, trans_date, type, account, category, \
+       net_amount) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [
+        row.uuid ?? null,
+        row.statement_amount ?? null,
+        row.description ?? null,
+        row.comment ?? null,
+        row.source_name ?? null,
+        row.source_row ?? null,
+        row.source_type ?? null,
+        row.statement_balance ?? null,
+        row.account_balance ?? null,
+        row.trans_date ?? null,
+        row.type ?? null,
+        row.account ?? null,
+        row.category ?? null,
+        row.net_amount ?? null
+      ]);
+
+    logger.debug(`Inserted transaction: ${row.uuid}`);
+
+  } else {
+    // update existing transaction
+
+    const [results] = await pool.execute(
+      'update transactions set \
+       statement_amount = ?, description = ?, comment = ?, \
+       source_name = ?, source_row = ?, source_type = ?, statement_balance = ?, \
+       account_balance = ?, trans_date = ?, type = ?, account = ?, category = ?, \
+       net_amount = ? where uuid = ?',
+      [
+        row.statement_amount ?? null,
+        row.description ?? null,
+        row.comment ?? null,
+        row.source_name ?? null,
+        row.source_row ?? null,
+        row.source_type ?? null,
+        row.statement_balance ?? null,
+        row.account_balance ?? null,
+        row.trans_date ?? null,
+        row.type ?? null,
+        row.account ?? null,
+        row.category ?? null,
+        row.net_amount ?? null,
+        row.uuid
+      ]);
+
+    logger.debug(`Updated transaction: ${row.uuid}`);
+  }
+
+  const [results] = await pool.query('SELECT * FROM transactions WHERE uuid = ?', [row.uuid]);
+  return results[0];
+};
+
 async function storeTransactions(transactions) {
 
   logger.debug(`storeTransactions() called [count = ${transactions.length}]`);
@@ -307,5 +378,6 @@ export {
   getSystemInfo,
   getTransactions,
   setAccount,
+  setTransaction,
   storeTransactions,
 }

@@ -15,6 +15,7 @@ import {
   getSystemInfo, 
   getTransactions, 
   setAccount, 
+  setTransaction, 
   storeTransactions
 } from './lib/db.js';
 import parseChaseStatement from './parsers/chase-20230831.js';
@@ -161,13 +162,11 @@ app.get('/transactions', authenticateToken, async (req, res) => {
   res.json(response);
 });
 
-// PUT account
-app.put('/account/', authenticateToken, async (req, res) => {
-  const result = await setAccount(req.body);
-  logger.info(`Set account [user = '${req.user.username}']`);
-  res.send({
-    success: true
-  })
+// PUT transaction
+app.put('/transaction/', authenticateToken, async (req, res) => {
+  const transaction = await setTransaction(req.body);
+  logger.info(`Set transaction [user = '${req.user.username}']`);
+  res.json(transaction);
 })
 
 // POST statement (file upload)
