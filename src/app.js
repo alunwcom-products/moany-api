@@ -137,12 +137,9 @@ app.put('/account/', authenticateToken, async (req, res) => {
 
 // GET categories
 app.get('/categories', authenticateToken, async (req, res) => {
-  const limit = Number(req.query.limit) || 100; // TODO configurable default?
-  const offset = Number(req.query.offset) || 0;
-
-  const response = await getCategories(limit, offset);
+  const categories = await getCategories();
   logger.info(`Got categories [user = '${req.user.username}']`);
-  res.json(response);
+  res.json({ results: categories });
 });
 
 // PUT categories

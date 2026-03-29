@@ -71,23 +71,10 @@ const getAccountSummary = async () => {
   return results;
 }
 
-const getCategories = async (limit, offset) => {
-  // get paginated results
-  const [results] = await pool.query('SELECT * FROM category_tree ORDER BY name LIMIT ? OFFSET ?', [limit, offset]);
-  // get total result count
-  const [[countRow]] = await pool.query("SELECT COUNT(*) AS count FROM category_tree");
-  const count = countRow ? Object.values(countRow)[0] : -1; // only expecting a single field result
-  if (count < 0) {
-    throw new Error('Invalid response to count(*) query!');
-  }
-  // return results with metadata (for MUI DataGrid server-side pagination)
-  return {
-    results,
-    totalCount: Number(count),
-    resultCount: results.length,
-    offset: offset,
-    limit: limit
-  };
+// used as lookup - no pagination
+const getCategories = async () => {
+  const [results] = await pool.query('SELECT * FROM categories_view ORDER BY full_name', []);
+  return results;
 }
 
 // row should be supplied as JSON (uuid, name, parent_id)
