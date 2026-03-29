@@ -71,9 +71,73 @@ const getAccountSummary = async () => {
   return results;
 }
 
-const getCategories = async () => {
-  const [results] = await pool.query('select * from category_tree order by name', []);
-  return results;
+const getCategories = async (limit, offset) => {
+  // get paginated results
+  const [results] = await pool.query('SELECT * FROM category_tree ORDER BY name LIMIT ? OFFSET ?', [limit, offset]);
+  // get total result count
+  const [[countRow]] = await pool.query("SELECT COUNT(*) AS count FROM category_tree");
+  const count = countRow ? Object.values(countRow)[0] : -1; // only expecting a single field result
+  if (count < 0) {
+    throw new Error('Invalid response to count(*) query!');
+  }
+  // return results with metadata (for MUI DataGrid server-side pagination)
+  return {
+    results,
+    totalCount: Number(count),
+    resultCount: results.length,
+    offset: offset,
+    limit: limit
+  };
+}
+
+// row should be supplied as JSON (uuid, name, parent_id)
+// returns new category
+const setCategory = async (row) => {
+  // validate category - only name required
+  if (!row.name) throw new Error('Category name missing.');
+
+  if (!row.uuid) {
+    // insert new category
+
+    row.uuid = uuidv4();
+
+    // don't set entry_date, created or modified - these will be set in database!
+    const [results] = await pool.execute(
+      'INSERT INTO categories (uuid, name, parent_id) VALUES (?,?,?)',
+      [
+        row.uuid ?? null,
+        row.name ?? null,
+        row.parent_id ?? null,
+      ]);
+
+    if (results.affectedRows !== 1) {
+      // No category inserted
+      throw new Error("Category insert failed");
+    }
+
+    logger.debug(`Inserted category: ${row.uuid}`);
+
+  } else {
+    // update existing transaction
+
+    const [results] = await pool.execute(
+      'UPDATE categories SET name = ?, parent_id = ? WHERE uuid = ?',
+      [
+        row.name ?? null,
+        row.parent_id ?? null,
+        row.uuid ?? null,
+      ]);
+
+    if (results.affectedRows === 0) {
+      // No matching category
+      throw new Error("No matching category");
+    }
+
+    logger.debug(`Updated category: ${row.uuid}`);
+  }
+
+  const [results] = await pool.query('SELECT * FROM categories WHERE uuid = ?', [row.uuid]);
+  return results[0];
 }
 
 const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
@@ -226,6 +290,11 @@ const setTransaction = async (row) => {
         row.net_amount ?? null
       ]);
 
+    if (results.affectedRows !== 1) {
+      // No category inserted
+      throw new Error("Transaction insert failed");
+    }
+
     logger.debug(`Inserted transaction: ${row.uuid}`);
 
   } else {
@@ -253,6 +322,11 @@ const setTransaction = async (row) => {
         row.net_amount ?? null,
         row.uuid
       ]);
+
+    if (results.affectedRows === 0) {
+      // No matching category
+      throw new Error("No matching transaction");
+    }
 
     logger.debug(`Updated transaction: ${row.uuid}`);
   }
@@ -378,6 +452,7 @@ export {
   getSystemInfo,
   getTransactions,
   setAccount,
+  setCategory,
   setTransaction,
   storeTransactions,
 }

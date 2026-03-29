@@ -15,6 +15,7 @@ import {
   getSystemInfo, 
   getTransactions, 
   setAccount, 
+  setCategory, 
   setTransaction, 
   storeTransactions
 } from './lib/db.js';
@@ -136,9 +137,19 @@ app.put('/account/', authenticateToken, async (req, res) => {
 
 // GET categories
 app.get('/categories', authenticateToken, async (req, res) => {
-  const categories = await getCategories();
+  const limit = Number(req.query.limit) || 100; // TODO configurable default?
+  const offset = Number(req.query.offset) || 0;
+
+  const response = await getCategories(limit, offset);
   logger.info(`Got categories [user = '${req.user.username}']`);
-  res.json({ results: categories });
+  res.json(response);
+});
+
+// PUT categories
+app.put('/categories/', authenticateToken, async (req, res) => {
+  const category = await setCategory(req.body);
+  logger.info(`Set category [user = '${req.user.username}']`);
+  res.json(category);
 });
 
 // GET transactions
