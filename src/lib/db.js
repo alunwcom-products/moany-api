@@ -132,15 +132,15 @@ const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
 
   if (accounts.length < 1) {
     // return results for all accounts
-    transactionsSql = 'SELECT * FROM transactions WHERE trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
+    transactionsSql = 'SELECT * FROM v_account_transactions WHERE trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
     transactionsParams = [formatDate(startDate), formatDate(endDate), limit, offset];
-    countSql = 'SELECT COUNT(*) AS count FROM transactions WHERE trans_date BETWEEN ? AND ?';
+    countSql = 'SELECT COUNT(*) AS count FROM v_account_transactions WHERE trans_date BETWEEN ? AND ?';
     countParams = [formatDate(startDate), formatDate(endDate)];
   } else {
     // return results for specified accounts
-    transactionsSql = 'SELECT * FROM transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
+    transactionsSql = 'SELECT * FROM v_account_transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
     transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
-    countSql = 'SELECT COUNT(*) AS count FROM transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ?';
+    countSql = 'SELECT COUNT(*) AS count FROM v_account_transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ?';
     countParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
   }
 
