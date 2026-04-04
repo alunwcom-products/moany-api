@@ -28,7 +28,7 @@ import { MAX_DATE, MIN_DATE, parseDate } from './lib/date.js';
 
 import 'dotenv/config';
 
-const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 5;
+const RATE_LIMIT_WINDOW_MINUTES = process.env.RATE_LIMIT_WINDOW_MINUTES || 3;
 const RATE_LIMIT_REQUESTS = process.env.RATE_LIMIT_REQUESTS || 150;
 
 const limiter = rateLimit({
