@@ -2,6 +2,7 @@ import mysql from 'mysql2/promise';
 import logger from './logger.js';
 import { compareSync } from "bcrypt";
 import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 
 import 'dotenv/config';
 import { formatDate } from './date.js';
@@ -152,8 +153,16 @@ const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
     throw new Error('Invalid response to count(*) query!');
   }
 
+  // reformat trans_date
+  const resultsDateFormat = results.map((row) => ({
+    ...row,
+    trans_date: dayjs(row.trans_date).format('YYYY-MM-DD')
+  }));
+
+  logger.debug(JSON.stringify(resultsDateFormat, null, 2));
+
   return {
-    results,
+    results: resultsDateFormat,
     totalCount: Number(count),
     resultCount: results.length,
     offset: offset,

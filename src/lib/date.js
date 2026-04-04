@@ -2,15 +2,25 @@
 // date utility functions
 //
 import { parse, isValid, isBefore, format, isAfter, isEqual } from 'date-fns';
+import dayjs from 'dayjs';
 import logger from './logger.js';
 
-const parseDate = (dateStr, format = 'yyyy-MM-dd') => {
+const parseDate = (dateStr, format = 'YYYY-MM-DD') => {
+  // WIP
+  // const date = dayjs(dateStr, format);
+  // if (date.isValid()) {
+  //   return date.toDate();
+  // } else {
+  //   logger.error(`Caught error in parseDate(${dateStr}, ${format})`);
+  //   throw error;
+  // }
+
   try {
-    const date = parse(dateStr, format, null);
+    const date = dayjs(dateStr, format);
     return date;
   } catch (error) {
     logger.error(`Caught error in parseDate(${dateStr}, ${format})`);
-    throw error;    
+    throw error;
   }
 };
 
@@ -20,7 +30,7 @@ const formatDate = (date, formatStr = 'yyyy-MM-dd') => {
     return dateStr;
   } catch (error) {
     logger.error(`Caught error in formatDate(${date}, ${format})`);
-    throw error;    
+    throw error;
   }
 }
 
