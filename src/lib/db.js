@@ -84,6 +84,16 @@ const setCategory = async (row) => {
   // validate category - only name required
   if (!row.name) throw new Error('Category name missing.');
 
+  // check if parent_id is set, if not set value as null
+  if (row.parent_id === '') {
+    row.parent_id = null;
+  }
+
+  // check parent_id is not equal to uuid
+  if (row.uuid && row.uuid === row.parent_id) {
+    throw new Error('UUID cannot be same as parent UUID');
+  }
+
   if (!row.uuid) {
     // insert new category
 
