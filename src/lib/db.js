@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 import logger from './logger.js';
 import { compareSync } from "bcrypt";
-import { v4 as uuidv4 } from 'uuid';
+import { getKey } from './utils.js';
 import dayjs from 'dayjs';
 
 import 'dotenv/config';
@@ -97,7 +97,7 @@ const setCategory = async (row) => {
   if (!row.uuid) {
     // insert new category
 
-    row.uuid = uuidv4();
+    row.uuid = getKey();
 
     // don't set entry_date, created or modified - these will be set in database!
     const [results] = await pool.execute(
@@ -207,24 +207,60 @@ const getMonthlyTotals = async () => {
 
 // row should be supplied as JSON
 const setAccount = async (row) => {
-  // check if account exists or not - and either insert or update row
-  const [resultSet] = await pool.query('select * from accounts where uuid = ?', [row.uuid]);
 
-  if (resultSet.length > 0) {
-    // UPDATE
-    logger.debug(`Updating account ${row.uuid}`);
-    const [results] = await pool.execute(
-      'update accounts set account_num = ?, name = ?, type = ?, starting_balance = ?, sortcode = ?, active = ? \
-       where uuid = ?',
-      [row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active, row.uuid]);
-  } else {
-    // INSERT
-    logger.debug(`Inserting account ${row.uuid}`);
+  // validate account
+  if (!row.account_num) throw new Error('Account number missing.');
+  if (!row.name) throw new Error('Account name missing.');
+  if (row.type && row.type !== 'DEBIT' && row.type !== 'CREDIT') throw new Error('Invalid account type.');
+
+  if (!row.uuid) {
+    // insert new account
+    row.uuid = getKey();
+
     const [results] = await pool.execute(
       'insert into accounts (uuid, account_num, name, type, starting_balance, sortcode, active) values (?,?,?,?,?,?,?)',
-      [row.uuid, row.account_num, row.name, row.type, row.starting_balance, row.sortcode, row.active]);
+      [
+        row.uuid, // required (getKey())
+        row.account_num, // required
+        row.name, //required
+        row.type ?? 'DEBIT', // default to 'DEBIT' ['DEBIT', 'CREDIT']
+        row.starting_balance ?? 0, // default to zero
+        row.sortcode ?? null, // default to null
+        row.active ?? true // default to active `b'1'`
+      ]);
+
+    if (results.affectedRows !== 1) {
+      throw new Error("Account insert failed");
+    }
+
+    logger.debug(`Inserted account: ${row.uuid}`);
+
+  } else {
+    // update existing account
+
+
+    const [results] = await pool.execute(
+      'update accounts set account_num = ?, name = ?, type = ?, starting_balance = ?, sortcode = ?, active = ? where uuid = ?',
+      [
+        row.account_num, // required 
+        row.name, // required
+        row.type ?? 'DEBIT', // default to 'DEBIT' ['DEBIT', 'CREDIT']
+        row.starting_balance ?? 0, // default to zero
+        row.sortcode ?? null, // default to null
+        row.active ?? true, // default to active `b'1'`
+        row.uuid // required
+      ]);
+
+    if (results.affectedRows === 0) {
+      throw new Error("No matching account");
+    }
+
+    logger.debug(`Updated account: ${row.uuid}`);
   }
-  return;
+
+  // NOTE: returning account summary record - which has additional properties to the account record
+  const [results] = await pool.query('SELECT * FROM account_summary WHERE uuid = ?', [row.uuid]);
+  return results[0];
 }
 
 async function getAccountByNumber(accountNumStr) {
@@ -272,7 +308,7 @@ const setTransaction = async (row) => {
 
   if (!row.uuid) {
     // insert new transaction
-    row.uuid = uuidv4();
+    row.uuid = getKey();
 
     // don't set entry_date, created or modified - these will be set in database!
     const [results] = await pool.execute(

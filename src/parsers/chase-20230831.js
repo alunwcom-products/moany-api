@@ -1,5 +1,5 @@
-import { isValid, parse } from "date-fns";
-import { v4 as uuidv4 } from 'uuid';
+import { parse } from "date-fns";
+import { getKey } from "../lib/utils.js";
 import logger from "../lib/logger.js";
 import { getAccountByNumber } from "../lib/db.js";
 
@@ -32,7 +32,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
       const statement_balance = match[4].replace('£', '').replace(',', '');
 
       transactions.push({
-        uuid: uuidv4(),
+        uuid: getKey(),
         statement_amount,
         description: description,
         comment: null,

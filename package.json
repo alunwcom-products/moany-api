@@ -25,6 +25,7 @@
     "mysql2": "^3.20.0",
     "pdf-parse-new": "^2.0.0",
     "uuid": "^13.0.0",
+    "uuidv7": "^1.2.1",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
