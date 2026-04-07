@@ -128,11 +128,9 @@ app.get('/accountSummary', authenticateToken, async (req, res) => {
 
 // PUT account
 app.put('/account/', authenticateToken, async (req, res) => {
-  const result = await setAccount(req.body);
+  const account = await setAccount(req.body);
   logger.info(`Set account [user = '${req.user.username}']`);
-  res.send({
-    success: true
-  })
+  res.json(account);
 });
 
 // GET categories

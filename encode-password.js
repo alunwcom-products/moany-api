@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from 'uuid';
+import { getKey } from "./src/lib/utils.js";
 
 const saltRounds = 11;
 
@@ -14,5 +14,5 @@ if (process.argv.length !== 3) {
   process.exit(-1);
 }
 
-console.log(`GENERATED UUID:\t${uuidv4()}`);
+console.log(`GENERATED UUID:\t${getKey()}`);
 console.log(`ENCODED TEXT:\t${await encode(process.argv[2])}`);

@@ -24,7 +24,7 @@ if the error is a result of internal validation an error message should be given
 */
 
 import { isValid, parse } from "date-fns";
-import { v4 as uuidv4 } from 'uuid';
+import { getKey } from "../lib/utils.js";
 import logger from "../lib/logger.js";
 import { getAccountByNumber } from "../lib/db.js";
 
@@ -82,7 +82,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
     }
 
     transactions.push({
-      uuid: uuidv4(),
+      uuid: getKey(),
       statement_amount,
       description,
       comment: null,

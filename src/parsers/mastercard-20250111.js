@@ -24,7 +24,7 @@ if the error is a result of internal validation an error message should be given
 */
 
 import { isValid, parse } from "date-fns";
-import { v4 as uuidv4 } from 'uuid';
+import { getKey } from "../lib/utils.js";
 import { getDateInRange } from '../lib/date.js';
 import logger from "../lib/logger.js";
 import { getAccountByNumber } from "../lib/db.js";
@@ -59,7 +59,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
 
   // initialize transactions - adding extra transaction for starting balance
   const transactions = [{
-    uuid: uuidv4(),
+    uuid: getKey(),
     statement_amount: 0,
     description: 'BALANCE FROM PREVIOUS STATEMENT',
     comment: null,
@@ -89,7 +89,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
     const net_amount = statement_amount * multiplier;
 
     transactions.push({
-      uuid: uuidv4(),
+      uuid: getKey(),
       statement_amount,
       description: `${match[3]} ${match[4]}`,
       comment: null,
