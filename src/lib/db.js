@@ -322,7 +322,7 @@ const setTransaction = async (row) => {
         row.description ?? null,
         row.comment ?? null,
         row.source_name ?? null,
-        row.source_row ?? null,
+        row.source_row ?? 0,
         row.source_type ?? null,
         row.statement_balance ?? null,
         row.account_balance ?? null,
