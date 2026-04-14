@@ -1,7 +1,7 @@
 services:
   moany-db:
     image: mariadb:lts
-    container_name: moany-db-uat
+    container_name: moany-node-db
     restart: unless-stopped
     env_file:
       - .env.compose
@@ -14,11 +14,11 @@ services:
       MARIADB_DISABLE_UPGRADE_BACKUP: true
     ports:
       # Format: [HOST_IP]:[HOST_PORT]:[CONTAINER_PORT]
-      - "127.0.0.1:3326:3306"
+      - "127.0.0.1:3316:3306"
     networks:
       - moany-net
     volumes:
-      - /srv/apps/moany-uat-db:/var/lib/mysql
+      - /srv/apps/moany-node-db:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized || exit 1"]
       interval: 30s
@@ -28,7 +28,7 @@ services:
 
   moany-api:
     image: alunwcom/moany-api:latest
-    container_name: moany-api-prod
+    container_name: moany-node-api
     ports:
       # Format: [HOST_IP]:[HOST_PORT]:[CONTAINER_PORT]
       - "127.0.0.1:9080:3000"
@@ -52,10 +52,10 @@ services:
       RATE_LIMIT_REQUESTS: 100
     restart: unless-stopped
     volumes:
-      - /srv/apps/moany-api-prod:/app/logs
+      - /srv/apps/moany-node-api:/app/logs
 
 networks:
   moany-net:
     driver: bridge
-    name: moany-api-network
+    name: moany-api-net
 
