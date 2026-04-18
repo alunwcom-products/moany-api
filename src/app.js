@@ -11,9 +11,11 @@ import {
   getAccountByUuid, 
   getAccountSummary, 
   getCategories, 
+  getCategoryTotals, 
   getMonthlyTotals, 
   getSystemInfo, 
   getTransactions, 
+  getTransactionsDateRange, 
   setAccount, 
   setCategory, 
   setTransaction, 
@@ -24,7 +26,7 @@ import parseMCardStatement from './parsers/mastercard-20250111.js';
 import parseNatwestDebit from './parsers/natwest-debit-20250130.js';
 import { authenticateToken, clearCookie, generateToken, setCookie } from './lib/jwt.js';
 import { extractPdfText } from './lib/pdf.js';
-import { MAX_DATE, MIN_DATE, parseDate } from './lib/date.js';
+import { formatDate, MAX_DATE, MIN_DATE, parseDate } from './lib/date.js';
 
 import 'dotenv/config';
 
@@ -276,6 +278,20 @@ app.delete('/session', authenticateToken, async (req, res) => {
 app.get('/monthly-totals', authenticateToken, async (req, res) => {
   const totals = await getMonthlyTotals();
   logger.info(`Got monthly totals [user = '${req.user.username}']`);
+  res.json({ results: totals });
+});
+
+// GET category totals
+app.get('/category-totals', authenticateToken, async (req, res) => {
+  // get earliest and latest transaction dates for when no start month or end month are specified
+  const dateRange = await getTransactionsDateRange();
+
+  // Get start and end dates, if no date use 'min' or 'max' date
+  const startMonth = req.query.startMonth ? req.query.startMonth : formatDate(parseDate(dateRange.min_date), 'yyyy-MM');
+  const endMonth = req.query.endMonth ? req.query.endMonth : formatDate(parseDate(dateRange.max_date), 'yyyy-MM');
+
+  const totals = await getCategoryTotals(startMonth, endMonth);
+  logger.info(`Got category totals [user = '${req.user.username}']`);
   res.json({ results: totals });
 });
 

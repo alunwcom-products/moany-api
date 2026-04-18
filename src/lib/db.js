@@ -5,7 +5,7 @@ import { getKey } from './utils.js';
 import dayjs from 'dayjs';
 
 import 'dotenv/config';
-import { formatDate } from './date.js';
+import { formatDate, getYearMonthRange } from './date.js';
 
 // mysql2 connection pool
 const pool = mysql.createPool({
@@ -181,6 +181,11 @@ const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
   };
 }
 
+const getTransactionsDateRange = async () => {
+  const [results] = await pool.query('select min(trans_date) as min_date, max(trans_date) as max_date from transactions', []);
+  return results[0];
+}
+
 const getMonthlyTotals = async () => {
   const [results] = await pool.query('select * from monthly_totals', []);
 
@@ -204,6 +209,33 @@ const getMonthlyTotals = async () => {
   });
 
   return dateResults;
+}
+
+const getCategoryTotals = async (startMonth, endMonth) => {
+  logger.debug(`start = ${startMonth}; end = ${endMonth}`);
+  const range = getYearMonthRange(startMonth, endMonth).map((item) => {
+    return { [item]: null };
+  });
+
+  const [results] = await pool.query('SELECT * FROM v_monthly_category_totals WHERE month BETWEEN ? AND ? ORDER BY full_name, month', [startMonth, endMonth]);
+
+  // pivot data
+  const pivoted = results.reduce((acc, { full_name, name, depth, month, total_amount }) => {
+    // Look for an existing object for this category
+    let category = acc.find(item => item.full_name === full_name);
+
+    if (!category) {
+      // If it doesn't exist, create it and push to accumulator
+      category = { full_name, name, depth };
+      Object.assign(category, ...range);
+      acc.push(category);
+    }
+    category[month] = total_amount;
+
+    return acc;
+  }, []);
+
+  return pivoted;
 }
 
 // row should be supplied as JSON
@@ -491,8 +523,10 @@ export {
   getAccounts,
   getAccountSummary,
   getCategories,
+  getCategoryTotals,
   getMonthlyTotals,
   getSystemInfo,
+  getTransactionsDateRange,
   getTransactions,
   setAccount,
   setCategory,

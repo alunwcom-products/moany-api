@@ -64,6 +64,30 @@ function getDateInRange(partialDateStr, startDate, endDate) {
   }
 }
 
+/**
+ * Generates an array of YYYY-MM strings between two dates inclusive.
+ * @param {string} start - Format "YYYY-MM"
+ * @param {string} end - Format "YYYY-MM"
+ */
+function getYearMonthRange(start, end) {
+    let current = new Date(start + "-01"); // Add -01 to make it a valid ISO date
+    const last = new Date(end + "-01");
+    const results = [];
+
+    while (current <= last) {
+        // Format back to YYYY-MM
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, '0');
+        results.push(`${year}-${month}`);
+
+        // Increment the month. 
+        // JS Date automatically handles year rollover (Dec -> Jan)
+        current.setMonth(current.getMonth() + 1);
+    }
+
+    return results;
+}
+
 const MAX_DATE = new Date(9999, 11, 31); // 9999-12-31 NOTE: keep dates within mysql capacity (4-digit years)
 const MIN_DATE = new Date(0, 0, 1); // 1900-01-01
 
@@ -72,5 +96,6 @@ export {
   getDateInRange,
   MAX_DATE,
   MIN_DATE,
-  parseDate
+  parseDate,
+  getYearMonthRange,
 }
