@@ -161,11 +161,17 @@ app.get('/transactions', authenticateToken, async (req, res) => {
     ? req.query.account 
     : [req.query.account].filter(Boolean);
 
+  // If single category (a string) wrap as array
+  // filter(Boolean) handles undefined category parameter
+  const categories = Array.isArray(req.query.category) 
+    ? req.query.category 
+    : [req.query.category].filter(Boolean);
+
   // Get start and end dates, if no date use 'min' or 'max' date
   const startDate = req.query.startDate ? parseDate(req.query.startDate) : MIN_DATE;
   const endDate = req.query.endDate ? parseDate(req.query.endDate) : MAX_DATE;
 
-  const response = await getTransactions(limit, offset, accounts, startDate, endDate);
+  const response = await getTransactions(limit, offset, accounts, categories, startDate, endDate);
   logger.info(`Got transactions [user = '${req.user.username}', count = ${response.results.length} offset/limit = ${offset}/${limit}]`);
   res.json(response);
 });

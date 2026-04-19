@@ -139,45 +139,64 @@ const setCategory = async (row) => {
   return results[0];
 }
 
-const getTransactions = async (limit, offset, accounts, startDate, endDate) => {
-  let transactionsSql, transactionsParams, countSql, countParams;
+const getTransactions = async (limit, offset, accounts, categories, startDate, endDate) => {
 
-  if (accounts.length < 1) {
-    // return results for all accounts
-    transactionsSql = 'SELECT * FROM v_account_transactions WHERE trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
-    transactionsParams = [formatDate(startDate), formatDate(endDate), limit, offset];
-    countSql = 'SELECT COUNT(*) AS count FROM v_account_transactions WHERE trans_date BETWEEN ? AND ?';
-    countParams = [formatDate(startDate), formatDate(endDate)];
-  } else {
-    // return results for specified accounts
-    transactionsSql = 'SELECT * FROM v_account_transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ? ORDER BY trans_date, source_row, uuid LIMIT ? OFFSET ?';
-    transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
-    countSql = 'SELECT COUNT(*) AS count FROM v_account_transactions WHERE account IN (?) AND trans_date BETWEEN ? AND ?';
-    countParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
+  // 1. Base Query
+  // let sql = 'SELECT * FROM v_account_transactions WHERE 1=1';
+  let whereSql = ' WHERE 1=1';
+  const params = [];
+
+  // 2. Handle Accounts (IN clause)
+  if (accounts && accounts.length > 0) {
+    whereSql += ' AND account IN (?)';
+    params.push(accounts);
   }
 
-  const [results] = await pool.query(transactionsSql, transactionsParams);
-
-  const [[countRow]] = await pool.query(countSql, countParams);
-  const count = countRow ? Object.values(countRow)[0] : -1; // only expecting a single field result
-  if (count < 0) {
-    throw new Error('Invalid response to count(*) query!');
+  // 3. Handle Categories (IN clause)
+  if (categories && categories.length > 0) {
+    whereSql += ' AND category IN (?)';
+    params.push(categories);
   }
 
-  // reformat trans_date
-  const resultsDateFormat = results.map((row) => ({
+  // 4. Handle Dates
+  if (startDate) {
+    whereSql += ' AND trans_date >= ?';
+    params.push(formatDate(startDate));
+  }
+  if (endDate) {
+    whereSql += ' AND trans_date <= ?';
+    params.push(formatDate(endDate));
+  }
+
+  logger.debug(whereSql);
+  logger.debug(JSON.stringify(params));
+  const transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
+  logger.debug(JSON.stringify(transactionsParams));
+  
+  // 5. Get Total Count (for frontend pagination controls)
+  const [countResult] = await pool.query(
+    `SELECT COUNT(*) as total FROM transactions ${whereSql}`,
+    params
+  );
+  const totalItems = countResult[0].total;
+
+  // 6. Get Paginated Data
+  // Note: params are reused, then we add LIMIT and OFFSET
+  let dataSql = `SELECT * FROM transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
+  const [rows] = await pool.query(dataSql, [...params, limit, offset]);
+
+  // 7. Reformat trans_date
+  const resultsDateFormat = rows.map((row) => ({
     ...row,
     trans_date: dayjs(row.trans_date).format('YYYY-MM-DD')
   }));
 
-  logger.debug(JSON.stringify(resultsDateFormat, null, 2));
-
   return {
     results: resultsDateFormat,
-    totalCount: Number(count),
-    resultCount: results.length,
-    offset: offset,
-    limit: limit
+    totalCount: Number(totalItems),
+    resultCount: resultsDateFormat.length,
+    offset,
+    limit,
   };
 }
 
