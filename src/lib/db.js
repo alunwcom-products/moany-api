@@ -239,13 +239,13 @@ const getCategoryTotals = async (startMonth, endMonth) => {
   const [results] = await pool.query('SELECT * FROM v_monthly_category_totals WHERE month BETWEEN ? AND ? ORDER BY full_name, month', [startMonth, endMonth]);
 
   // pivot data
-  const pivoted = results.reduce((acc, { full_name, name, depth, month, total_amount }) => {
+  const pivoted = results.reduce((acc, { uuid, full_name, name, depth, month, total_amount }) => {
     // Look for an existing object for this category
-    let category = acc.find(item => item.full_name === full_name);
+    let category = acc.find(item => item.uuid === uuid);
 
     if (!category) {
       // If it doesn't exist, create it and push to accumulator
-      category = { full_name, name, depth };
+      category = { uuid, full_name, name, depth };
       Object.assign(category, ...range);
       acc.push(category);
     }
