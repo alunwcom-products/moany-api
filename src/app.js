@@ -167,11 +167,13 @@ app.get('/transactions', authenticateToken, async (req, res) => {
     ? req.query.category 
     : [req.query.category].filter(Boolean);
 
+  const includeChildCategories = Boolean(req.query.childCats);
+
   // Get start and end dates, if no date use 'min' or 'max' date
   const startDate = req.query.startDate ? parseDate(req.query.startDate) : MIN_DATE;
   const endDate = req.query.endDate ? parseDate(req.query.endDate) : MAX_DATE;
 
-  const response = await getTransactions(limit, offset, accounts, categories, startDate, endDate);
+  const response = await getTransactions(limit, offset, accounts, categories, includeChildCategories, startDate, endDate);
   logger.info(`Got transactions [user = '${req.user.username}', count = ${response.results.length} offset/limit = ${offset}/${limit}]`);
   res.json(response);
 });

@@ -139,26 +139,33 @@ const setCategory = async (row) => {
   return results[0];
 }
 
-const getTransactions = async (limit, offset, accounts, categories, startDate, endDate) => {
+const getTransactions = async (limit, offset, accounts, categories, includeChildCategories, startDate, endDate) => {
 
-  // 1. Base Query
-  // let sql = 'SELECT * FROM v_account_transactions WHERE 1=1';
+  // base query params
   let whereSql = ' WHERE 1=1';
   const params = [];
 
-  // 2. Handle Accounts (IN clause)
+  // handle accounts
   if (accounts && accounts.length > 0) {
     whereSql += ' AND account IN (?)';
     params.push(accounts);
   }
 
-  // 3. Handle Categories (IN clause)
+  // handle categories + include child categories
   if (categories && categories.length > 0) {
-    whereSql += ' AND category IN (?)';
+    if (includeChildCategories === 'true' || includeChildCategories === true) {
+      // look up the category itself AND all its descendants
+      whereSql += ` AND category IN (
+      SELECT descendant_id FROM v_category_hierarchy WHERE parent_id IN (?)
+    )`;
+    } else {
+      // only match exact categories
+      whereSql += ' AND category IN (?)';
+    }
     params.push(categories);
   }
 
-  // 4. Handle Dates
+  // handle Dates
   if (startDate) {
     whereSql += ' AND trans_date >= ?';
     params.push(formatDate(startDate));
@@ -172,20 +179,20 @@ const getTransactions = async (limit, offset, accounts, categories, startDate, e
   logger.debug(JSON.stringify(params));
   const transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
   logger.debug(JSON.stringify(transactionsParams));
-  
-  // 5. Get Total Count (for frontend pagination controls)
+
+  // get total count (for frontend pagination controls)
   const [countResult] = await pool.query(
     `SELECT COUNT(*) as total FROM transactions ${whereSql}`,
     params
   );
   const totalItems = countResult[0].total;
 
-  // 6. Get Paginated Data
-  // Note: params are reused, then we add LIMIT and OFFSET
+  // get paginated data
+  // NOTE: params are reused, then we add LIMIT and OFFSET
   let dataSql = `SELECT * FROM transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
   const [rows] = await pool.query(dataSql, [...params, limit, offset]);
 
-  // 7. Reformat trans_date
+  // reformat trans_date
   const resultsDateFormat = rows.map((row) => ({
     ...row,
     trans_date: dayjs(row.trans_date).format('YYYY-MM-DD')
