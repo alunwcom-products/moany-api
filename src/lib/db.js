@@ -175,21 +175,18 @@ const getTransactions = async (limit, offset, accounts, categories, includeChild
     params.push(formatDate(endDate));
   }
 
-  logger.debug(whereSql);
-  logger.debug(JSON.stringify(params));
   const transactionsParams = [accounts, formatDate(startDate), formatDate(endDate), limit, offset];
-  logger.debug(JSON.stringify(transactionsParams));
 
   // get total count (for frontend pagination controls)
   const [countResult] = await pool.query(
-    `SELECT COUNT(*) as total FROM transactions ${whereSql}`,
+    `SELECT COUNT(*) as total FROM v_account_transactions ${whereSql}`,
     params
   );
   const totalItems = countResult[0].total;
 
   // get paginated data
   // NOTE: params are reused, then we add LIMIT and OFFSET
-  let dataSql = `SELECT * FROM transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
+  let dataSql = `SELECT * FROM v_account_transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
   const [rows] = await pool.query(dataSql, [...params, limit, offset]);
 
   // reformat trans_date
