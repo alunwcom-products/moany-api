@@ -179,14 +179,14 @@ const getTransactions = async (limit, offset, accounts, categories, includeChild
 
   // get total count (for frontend pagination controls)
   const [countResult] = await pool.query(
-    `SELECT COUNT(*) as total FROM v_account_transactions ${whereSql}`,
+    `SELECT COUNT(*) as total FROM transactions ${whereSql}`,
     params
   );
   const totalItems = countResult[0].total;
 
   // get paginated data
   // NOTE: params are reused, then we add LIMIT and OFFSET
-  let dataSql = `SELECT * FROM v_account_transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
+  let dataSql = `SELECT * FROM transactions ${whereSql} ORDER BY trans_date, account, source_row, uuid LIMIT ? OFFSET ?`;
   const [rows] = await pool.query(dataSql, [...params, limit, offset]);
 
   // reformat trans_date
@@ -477,65 +477,16 @@ async function storeTransactions(transactions) {
   }
 }
 
-// expecting autocommit = off for this - to allow locking and rollback, but works either way
+// if no account is supplied, all accounts will be re-balanced
 async function calculateAccountBalances(account) {
-
-  logger.debug('calculateAccountBalances() called');
-
   let conn;
   try {
-    conn = await pool.getConnection();
-    await conn.query('BEGIN');
-
-    const query = 'SELECT * FROM transactions WHERE account = ? ORDER BY trans_date, source_row FOR UPDATE';
-    const [rows, fields] = await conn.query(
-      query, [account.uuid]
-    );
-
-    if (account.type !== 'DEBIT' && account.type !== 'CREDIT') {
-      throw new Error(`Account type not valid [${account.uuid}]!`);
-    }
-    const multiplier = (account.type === 'DEBIT' ? 1 : -1);
-    let account_balance = parseFloat(account.starting_balance);
-
-    for (const row of rows) {
-      const updatedRow = { ...row };
-
-      // calculate net_amount
-      // need to handle cases where statement_amount is not defined (must have either statement_amount or net_amount)
-      let net_amount = 0;
-      if (row.statement_amount && row.statement_amount.length > 0) {
-        net_amount = parseFloat(row.statement_amount) * multiplier;
-      }
-      if (row.net_amount && row.net_amount.length > 0) {
-        net_amount = parseFloat(row.net_amount);
-      }
-      updatedRow.net_amount = net_amount;
-
-      // calculate account_balance
-      account_balance += net_amount;
-      updatedRow.account_balance = account_balance;
-
-      // logger.debug(`${updatedRow.statement_amount} | ${updatedRow.statement_balance} | ${updatedRow.net_amount} | ${updatedRow.account_balance}`);
-
-      // save transaction
-      const query = 'UPDATE transactions SET net_amount = ?, account_balance = ?  WHERE uuid = ?';
-      const [rows, fields] = await conn.query(
-        query, [updatedRow.net_amount, updatedRow.account_balance, updatedRow.uuid]
-      );
-    }
-
-    await conn.query('COMMIT');
-
+    await pool.query('call sp_recalculate_balances()', []);
+    logger.info(`calculateAccountBalances('${account}') called`);
   } catch (error) {
-    await conn.query('ROLLBACK');
     logger.error(error);
     throw error;
-  } finally {
-    conn.release();
   }
-
-  logger.debug('calculateAccountBalances() completed successfully');
 }
 
 export {

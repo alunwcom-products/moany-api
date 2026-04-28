@@ -5,20 +5,20 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
-import { 
-  authenticate, 
-  calculateAccountBalances, 
-  getAccountByUuid, 
-  getAccountSummary, 
-  getCategories, 
-  getCategoryTotals, 
-  getMonthlyTotals, 
-  getSystemInfo, 
-  getTransactions, 
-  getTransactionsDateRange, 
-  setAccount, 
-  setCategory, 
-  setTransaction, 
+import {
+  authenticate,
+  calculateAccountBalances,
+  getAccountByUuid,
+  getAccountSummary,
+  getCategories,
+  getCategoryTotals,
+  getMonthlyTotals,
+  getSystemInfo,
+  getTransactions,
+  getTransactionsDateRange,
+  setAccount,
+  setCategory,
+  setTransaction,
   storeTransactions
 } from './lib/db.js';
 import parseChaseStatement from './parsers/chase-20230831.js';
@@ -157,14 +157,14 @@ app.get('/transactions', authenticateToken, async (req, res) => {
 
   // If single account (a string) wrap as array
   // filter(Boolean) handles undefined account parameter
-  const accounts = Array.isArray(req.query.account) 
-    ? req.query.account 
+  const accounts = Array.isArray(req.query.account)
+    ? req.query.account
     : [req.query.account].filter(Boolean);
 
   // If single category (a string) wrap as array
   // filter(Boolean) handles undefined category parameter
-  const categories = Array.isArray(req.query.category) 
-    ? req.query.category 
+  const categories = Array.isArray(req.query.category)
+    ? req.query.category
     : [req.query.category].filter(Boolean);
 
   const includeChildCategories = Boolean(req.query.childCats);
@@ -180,10 +180,12 @@ app.get('/transactions', authenticateToken, async (req, res) => {
 
 // PUT transaction
 app.put('/transaction/', authenticateToken, async (req, res) => {
+  // TODO validation
   const transaction = await setTransaction(req.body);
   logger.info(`Set transaction [user = '${req.user.username}']`);
+  await calculateAccountBalances(req.body.account);
   res.json(transaction);
-})
+});
 
 // POST statement (file upload)
 app.post('/statement', authenticateToken, upload.single('file'), async (req, res) => {
