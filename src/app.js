@@ -244,8 +244,7 @@ app.post('/statement', authenticateToken, upload.single('file'), async (req, res
       // persist transactions
       await storeTransactions(transactions);
       // update net amounts and account balance
-      const account = await getAccountByUuid(transactions[0].account);
-      await calculateAccountBalances(account);
+      await calculateAccountBalances(transactions[0].account);
 
     } else {
       logger.warn(`Statement upload failed - no transactions found in file [user = '${user}']`);

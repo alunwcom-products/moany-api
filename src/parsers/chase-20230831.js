@@ -10,7 +10,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
   const accountNumberStr = getChaseAccountNumber(pdfText);
   // logger.debug(accountNumberStr);
   const account = await getAccountByNumber(accountNumberStr);
-  // logger.debug(account);
+  // logger.debug(JSON.stringify(account, null, 2));
 
   let sourceRow = 0;
 
@@ -21,7 +21,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
   let match;
 
   while ((match = transactionRegex.exec(cleanedText)) !== null) {
-    // logger.debug('Match found: [\'%s\',\'%s\',\'%s\',\'%s\']', match[1], match[2], match[3], match[4]);
+    logger.debug('Match found: [\'%s\',\'%s\',\'%s\',\'%s\']', match[1], match[2], match[3], match[4]);
 
     if (match[4]) { // this regex group is 'undefined' for opening and closing balances
       let description = match[2].trim();
@@ -30,6 +30,8 @@ export default async function parseTransactions(pdfText, pdfFilename) {
       const trans_date = parse(match[1], 'dd MMM yyyy', null);
       const statement_amount = match[3].replace('£', '').replace(',', '');
       const statement_balance = match[4].replace('£', '').replace(',', '');
+      const multiplier = -1; // debit account multiplier
+      const net_amount = statement_amount * multiplier;
 
       transactions.push({
         uuid: getKey(),
@@ -46,7 +48,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
         type: null,
         account: account.uuid,
         category: null,
-        net_amount: null
+        net_amount
       });
     }
   }
