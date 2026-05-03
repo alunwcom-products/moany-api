@@ -76,8 +76,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
 
     previousBalance = statement_balance;
 
-    const multiplier = -1; // debit account multiplier
-    const net_amount = statement_amount * multiplier;
+    const net_amount = statement_amount;
 
     let description = match[2];
     if (description) {
