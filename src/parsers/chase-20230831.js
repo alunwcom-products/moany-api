@@ -30,8 +30,7 @@ export default async function parseTransactions(pdfText, pdfFilename) {
       const trans_date = parse(match[1], 'dd MMM yyyy', null);
       const statement_amount = match[3].replace('£', '').replace(',', '');
       const statement_balance = match[4].replace('£', '').replace(',', '');
-      const multiplier = -1; // debit account multiplier
-      const net_amount = statement_amount * multiplier;
+      const net_amount = statement_amount;
 
       transactions.push({
         uuid: getKey(),
