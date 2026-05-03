@@ -44,7 +44,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
   let match;
   // format: '26 OCT 28 OCT 00498929 FASTER PAYMENT RECEIVED - THANK YOU 1,481.41 -' 
   const transactionRegex = /^(\d{2} [A-Z]{3}(?: \d{4})?)?(.*?)(\d{1,3}(?:,\d{3})*\.\d{2} )?(\d{1,3}(?:,\d{3})*\.\d{2})$/gms;
-  
+
   while ((match = transactionRegex.exec(getTransactionText(pdfText))) !== null) {
 
     // logger.debug(JSON.stringify(match, null, 2));
@@ -76,9 +76,12 @@ export default async function parseStatement(pdfText, pdfFilename) {
 
     previousBalance = statement_balance;
 
+    const multiplier = -1; // debit account multiplier
+    const net_amount = statement_amount * multiplier;
+
     let description = match[2];
     if (description) {
-      description = description.replace('\n',' ').replace(/\s\s+/g, ' ').trim();
+      description = description.replace('\n', ' ').replace(/\s\s+/g, ' ').trim();
     }
 
     transactions.push({
@@ -96,7 +99,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
       type: null,
       account: account.uuid,
       category: null,
-      net_amount: null
+      net_amount
     });
   }
 
