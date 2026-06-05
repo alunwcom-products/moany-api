@@ -47,7 +47,7 @@ export default async function parseStatement(pdfText, pdfFilename) {
 
   while ((match = transactionRegex.exec(getTransactionText(pdfText))) !== null) {
 
-    // logger.debug(JSON.stringify(match, null, 2));
+    //logger.debug(JSON.stringify(match, null, 2));
 
     let transDate = getTransactionDate(match[1], previousDate);
     if (!previousDate && !transDate) {
@@ -126,11 +126,18 @@ function getAccountNumber(text) {
   return match;
 }
 
+// remove text that sits between statement pages, and
 // get the statement text from the start of the transactions
 // to remove summary amounts and text
 function getTransactionText(text) {
+  // remove text that sits between statement pages
+  const editedText = text.replace(/RETSTMT .*?Balance\(\£\)/gs, "");
+
+  //logger.debug(editedText);
+
+  // match text from the first 'Balance(£)' heder
   const regex = /Balance\(£\)\n?(.*)/gms;
-  const match = regex.exec(text);
+  const match = regex.exec(editedText);
   if (!match || match.length !== 2) {
     throw new Error('Transaction text not found');
   }
