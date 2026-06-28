@@ -24,7 +24,7 @@
     "multer": "^2.2.0",
     "mysql2": "^3.22.5",
     "pdf-parse-new": "^2.1.0",
-    "uuid": "^14.0.0",
+    "uuid": "^14.0.1",
     "uuidv7": "^1.2.1",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
