@@ -31,5 +31,8 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true
   }
 }
