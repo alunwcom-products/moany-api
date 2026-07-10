@@ -153,14 +153,21 @@ const getTransactions = async (limit, offset, accounts, categories, includeChild
 
   // handle categories + include child categories
   if (categories && categories.length > 0) {
+
+    // check for 'uncat' (Uncategorized) special category
+    const uncat = categories.filter((uuid) => uuid === 'uncat');
+    if (uncat.length === 0) {
+      whereSql += ' AND category IN ';
+    } else {
+      whereSql += ' AND category IS NULL OR category IN ';
+    }
+
     if (includeChildCategories === 'true' || includeChildCategories === true) {
       // look up the category itself AND all its descendants
-      whereSql += ` AND category IN (
-      SELECT descendant_id FROM v_category_hierarchy WHERE parent_id IN (?)
-    )`;
+      whereSql += '(SELECT descendant_id FROM v_category_hierarchy WHERE parent_id IN (?))';
     } else {
       // only match exact categories
-      whereSql += ' AND category IN (?)';
+      whereSql += '(?)';
     }
     params.push(categories);
   }
